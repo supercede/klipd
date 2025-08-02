@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* macOS Native Styling */
+:root {
+  /* Light Mode */
+  --bg-primary: rgba(255, 255, 255, 0.8);
+  --bg-secondary: rgba(246, 246, 246, 0.8);
+  --bg-tertiary: rgba(242, 242, 247, 0.8);
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.4);
+  --accent-blue: #007aff;
+  --accent-red: #ff3b30;
+  --accent-green: #34c759;
+  --border-light: rgba(0, 0, 0, 0.1);
+  --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark Mode */
+    --bg-primary: rgba(28, 28, 30, 0.8);
+    --bg-secondary: rgba(44, 44, 46, 0.8);
+    --bg-tertiary: rgba(58, 58, 60, 0.8);
+    --text-primary: rgba(255, 255, 255, 0.85);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
+    --accent-blue: #0a84ff;
+    --accent-red: #ff453a;
+    --accent-green: #32d74b;
+    --border-light: rgba(255, 255, 255, 0.1);
+    --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+#app {
+  height: 100vh;
+  text-align: center;
+}
