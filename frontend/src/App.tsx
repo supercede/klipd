@@ -42,9 +42,26 @@ function App() {
       setIsSearchVisible(false);
     });
 
+    // Listen for clipboard updates
+    const clipboardAddedUnsubscribe = EventsOn(
+      "clipboard-item-added",
+      (_newItem: any) => {
+        loadClipboardItems();
+      }
+    );
+
+    const clipboardUpdatedUnsubscribe = EventsOn(
+      "clipboard-item-updated",
+      (_updatedItem: any) => {
+        loadClipboardItems();
+      }
+    );
+
     return () => {
       showSearchUnsubscribe();
       hideSearchUnsubscribe();
+      clipboardAddedUnsubscribe();
+      clipboardUpdatedUnsubscribe();
     };
   }, []);
 
@@ -217,9 +234,18 @@ function App() {
   };
 
   // Handle search with real-time backend integration
-  const handleSearch = async (query: string): Promise<ClipboardItem[]> => {
+  const handleSearch = async (
+    query: string,
+    useRegex: boolean = false
+  ): Promise<ClipboardItem[]> => {
     try {
-      const items = await WailsApp.SearchClipboardItems(query, 50);
+      let items;
+      if (useRegex) {
+        items = await WailsApp.SearchClipboardItemsRegex(query, 50);
+      } else {
+        items = await WailsApp.SearchClipboardItems(query, 50);
+      }
+
       return items.map((item) => ({
         id: item.id,
         contentType: item.contentType as "text" | "image" | "file",

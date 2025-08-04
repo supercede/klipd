@@ -4,3 +4,4 @@ node_modules
 frontend/dist
 stuff.md
 .env
+coverage.*

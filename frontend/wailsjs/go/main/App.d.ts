@@ -24,6 +24,8 @@ export function PinClipboardItem(arg1:string,arg2:boolean):Promise<void>;
 
 export function SearchClipboardItems(arg1:string,arg2:number):Promise<Array<models.ClipboardItem>>;
 
+export function SearchClipboardItemsRegex(arg1:string,arg2:number):Promise<Array<models.ClipboardItem>>;
+
 export function SelectClipboardItem(arg1:string):Promise<void>;
 
 export function ShowSearchInterface():Promise<void>;

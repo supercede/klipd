@@ -150,6 +150,17 @@ func (d *Database) SearchClipboardItems(searchTerm string, limit int) ([]models.
 	return items, err
 }
 
+// For better cross-platform support, consider implementing regex filtering in Go
+func (d *Database) SearchClipboardItemsRegex(regexPattern string, limit int) ([]models.ClipboardItem, error) {
+	var items []models.ClipboardItem
+	// SQLite REGEXP operator (if available)
+	err := d.DB.Where("preview_text REGEXP ?", regexPattern).
+		Order("is_pinned DESC, last_accessed DESC").
+		Limit(limit).
+		Find(&items).Error
+	return items, err
+}
+
 func (d *Database) GetClipboardItemByID(id string) (*models.ClipboardItem, error) {
 	var item models.ClipboardItem
 	err := d.DB.Where("id = ?", id).First(&item).Error

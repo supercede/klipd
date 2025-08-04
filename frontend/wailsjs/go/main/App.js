@@ -46,6 +46,10 @@ export function SearchClipboardItems(arg1, arg2) {
   return window['go']['main']['App']['SearchClipboardItems'](arg1, arg2);
 }
 
+export function SearchClipboardItemsRegex(arg1, arg2) {
+  return window['go']['main']['App']['SearchClipboardItemsRegex'](arg1, arg2);
+}
+
 export function SelectClipboardItem(arg1) {
   return window['go']['main']['App']['SelectClipboardItem'](arg1);
 }

@@ -16,7 +16,7 @@ interface ClipboardSearchProps {
   onItemDelete: (id: string) => void;
   onItemPin: (id: string, pinned: boolean) => void;
   onClose: () => void;
-  onSearch?: (query: string) => Promise<ClipboardItem[]>;
+  onSearch?: (query: string, useRegex?: boolean) => Promise<ClipboardItem[]>;
   isVisible: boolean;
 }
 
@@ -33,6 +33,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<ClipboardItem[]>(items);
   const [isSearching, setIsSearching] = useState(false);
+  const [useRegex, setUseRegex] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -54,7 +55,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
       if (searchQuery.trim() && onSearch) {
         setIsSearching(true);
         try {
-          const results = await onSearch(searchQuery);
+          const results = await onSearch(searchQuery, useRegex);
           setSearchResults(results);
         } catch (error) {
           console.error("Search failed:", error);
@@ -68,7 +69,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, onSearch, items]);
+  }, [searchQuery, useRegex, onSearch, items]);
 
   const sortedItems = [...searchResults].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
@@ -224,11 +225,26 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Search clipboard history..."
+              placeholder={
+                useRegex
+                  ? "Search with regex patterns..."
+                  : "Search clipboard history..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-macos-text-primary dark:text-macos-dark-text-primary placeholder-macos-text-tertiary dark:placeholder-macos-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-macos-accent-blue dark:focus:ring-macos-dark-accent-blue focus:border-transparent"
+              className="w-full pl-10 pr-20 py-3 bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-macos-text-primary dark:text-macos-dark-text-primary placeholder-macos-text-tertiary dark:placeholder-macos-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-macos-accent-blue dark:focus:ring-macos-dark-accent-blue focus:border-transparent"
             />
+            <button
+              onClick={() => setUseRegex(!useRegex)}
+              className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs font-medium rounded transition-colors duration-150 ${
+                useRegex
+                  ? "bg-macos-accent-blue text-white"
+                  : "bg-macos-bg-tertiary dark:bg-macos-dark-bg-tertiary text-macos-text-secondary dark:text-macos-dark-text-secondary hover:bg-macos-bg-quaternary dark:hover:bg-macos-dark-bg-quaternary"
+              }`}
+              title={useRegex ? "Disable regex search" : "Enable regex search"}
+            >
+              .*
+            </button>
           </div>
         </div>
 

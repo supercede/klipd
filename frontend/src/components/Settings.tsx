@@ -61,9 +61,9 @@ const Settings: React.FC<SettingsProps> = ({
           </h1>
           <button
             onClick={onClose}
-            className="w-6 h-6 rounded-full bg-macos-accent-red hover:bg-red-500 flex items-center justify-center text-white text-xs transition-colors"
+            className="w-6 h-6 rounded-full bg-macos-accent-red hover:bg-red-500 flex items-center justify-center text-white text-xs transition-colors font-bold"
           >
-            ×
+            X
           </button>
         </div>
 

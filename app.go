@@ -59,6 +59,9 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize clipboard monitor
 	a.clipboardMonitor = services.NewClipboardMonitor(a.db, a.config)
 
+	// Set Wails context for event emission
+	a.clipboardMonitor.SetWailsContext(a.ctx)
+
 	// Initialize hotkey manager
 	a.hotkeyManager = services.NewHotkeyManager()
 
@@ -178,6 +181,11 @@ func (a *App) SearchClipboardItems(query string, limit int) ([]models.ClipboardI
 		return a.GetClipboardItems(limit, 0, "")
 	}
 	return a.clipboardMonitor.SearchItems(query, limit)
+}
+
+// SearchClipboardItemsRegex searches clipboard items using regex patterns
+func (a *App) SearchClipboardItemsRegex(regexPattern string, limit int) ([]models.ClipboardItem, error) {
+	return a.db.SearchClipboardItemsRegex(regexPattern, limit)
 }
 
 // GetClipboardItemByID retrieves a specific clipboard item

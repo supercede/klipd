@@ -14,6 +14,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/google/uuid"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // handles clipboard monitoring and management
@@ -25,17 +26,24 @@ type ClipboardMonitor struct {
 	ctx           context.Context
 	cancel        context.CancelFunc
 	cleanupTicker *time.Ticker
+	wailsCtx      context.Context // Wails context for event emission
 }
 
 func NewClipboardMonitor(db *database.Database, cfg *config.Config) *ClipboardMonitor {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &ClipboardMonitor{
-		db:     db,
-		config: cfg,
-		ctx:    ctx,
-		cancel: cancel,
+		db:       db,
+		config:   cfg,
+		ctx:      ctx,
+		cancel:   cancel,
+		wailsCtx: nil,
 	}
+}
+
+// SetWailsContext sets the Wails context for event emission
+func (cm *ClipboardMonitor) SetWailsContext(wailsCtx context.Context) {
+	cm.wailsCtx = wailsCtx
 }
 
 func (cm *ClipboardMonitor) Start() error {
@@ -108,8 +116,6 @@ func (cm *ClipboardMonitor) checkClipboard() {
 		return
 	}
 
-	log.Printf("Clipboard content read: %s", config.TruncatePreview(content, 50))
-
 	// Skip if content hasn't changed
 	currentHash := cm.generateHash(content)
 	if currentHash == cm.lastHash {
@@ -129,6 +135,11 @@ func (cm *ClipboardMonitor) checkClipboard() {
 		existingItem.LastAccessed = time.Now()
 		if err := cm.db.UpdateClipboardItem(existingItem); err != nil {
 			log.Printf("Error updating existing clipboard item: %v", err)
+		} else {
+			// Emit event to frontend for real-time updates (item order may have changed)
+			if cm.wailsCtx != nil {
+				runtime.EventsEmit(cm.wailsCtx, "clipboard-item-updated", existingItem)
+			}
 		}
 		return
 	}
@@ -160,6 +171,10 @@ func (cm *ClipboardMonitor) checkClipboard() {
 
 	log.Printf("New clipboard item saved: %s (type: %s)",
 		config.TruncatePreview(content, 50), item.ContentType)
+
+	if cm.wailsCtx != nil {
+		runtime.EventsEmit(cm.wailsCtx, "clipboard-item-added", item)
+	}
 }
 
 func (cm *ClipboardMonitor) detectContentType(content string) string {
