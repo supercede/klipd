@@ -27,7 +27,7 @@ func NewConfig() *Config {
 		MaxItems:          100,
 		MaxDays:           7,
 		MonitoringEnabled: true,
-		GlobalHotkey:      "Cmd+Shift+V",
+		GlobalHotkey:      "Cmd+Shift+Space",
 		PreviousHotkey:    "Cmd+Shift+C",
 		AutoLaunch:        true,
 		EnableSounds:      false,

@@ -16,6 +16,8 @@ export function GetMonitoringStatus():Promise<Record<string, any>>;
 
 export function GetSettings():Promise<models.Settings>;
 
+export function HideSearchInterface():Promise<void>;
+
 export function IsMonitoringEnabled():Promise<boolean>;
 
 export function PinClipboardItem(arg1:string,arg2:boolean):Promise<void>;
@@ -24,6 +26,10 @@ export function SearchClipboardItems(arg1:string,arg2:number):Promise<Array<mode
 
 export function SelectClipboardItem(arg1:string):Promise<void>;
 
+export function ShowSearchInterface():Promise<void>;
+
 export function ToggleMonitoring():Promise<boolean>;
+
+export function TriggerGlobalHotkey():Promise<void>;
 
 export function UpdateSettings(arg1:models.Settings):Promise<void>;

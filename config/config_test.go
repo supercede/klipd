@@ -15,7 +15,7 @@ func TestNewConfig(t *testing.T) {
 	assert.Equal(t, 100, cfg.MaxItems)
 	assert.Equal(t, 7, cfg.MaxDays)
 	assert.True(t, cfg.MonitoringEnabled)
-	assert.Equal(t, "Cmd+Shift+V", cfg.GlobalHotkey)
+	assert.Equal(t, "Cmd+Shift+Space", cfg.GlobalHotkey)
 	assert.Equal(t, "Cmd+Shift+C", cfg.PreviousHotkey)
 	assert.True(t, cfg.AutoLaunch)
 	assert.False(t, cfg.EnableSounds)

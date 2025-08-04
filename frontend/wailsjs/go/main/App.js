@@ -30,6 +30,10 @@ export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
 }
 
+export function HideSearchInterface() {
+  return window['go']['main']['App']['HideSearchInterface']();
+}
+
 export function IsMonitoringEnabled() {
   return window['go']['main']['App']['IsMonitoringEnabled']();
 }
@@ -46,8 +50,16 @@ export function SelectClipboardItem(arg1) {
   return window['go']['main']['App']['SelectClipboardItem'](arg1);
 }
 
+export function ShowSearchInterface() {
+  return window['go']['main']['App']['ShowSearchInterface']();
+}
+
 export function ToggleMonitoring() {
   return window['go']['main']['App']['ToggleMonitoring']();
+}
+
+export function TriggerGlobalHotkey() {
+  return window['go']['main']['App']['TriggerGlobalHotkey']();
 }
 
 export function UpdateSettings(arg1) {

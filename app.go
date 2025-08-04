@@ -8,6 +8,8 @@ import (
 	"klipd/database"
 	"klipd/models"
 	"klipd/services"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -16,6 +18,7 @@ type App struct {
 	db               *database.Database
 	config           *config.Config
 	clipboardMonitor *services.ClipboardMonitor
+	hotkeyManager    *services.HotkeyManager
 }
 
 // NewApp creates a new App application struct
@@ -56,9 +59,22 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize clipboard monitor
 	a.clipboardMonitor = services.NewClipboardMonitor(a.db, a.config)
 
+	// Initialize hotkey manager
+	a.hotkeyManager = services.NewHotkeyManager()
+
+	// Register global hotkeys
+	if err := a.setupHotkeys(); err != nil {
+		log.Printf("Failed to setup hotkeys: %v", err)
+	}
+
 	// Start clipboard monitoring
 	if err := a.clipboardMonitor.Start(); err != nil {
 		log.Printf("Failed to start clipboard monitor: %v", err)
+	}
+
+	// Start hotkey manager
+	if err := a.hotkeyManager.Start(); err != nil {
+		log.Printf("Failed to start hotkey manager: %v", err)
 	}
 
 	log.Println("Klipd clipboard manager started successfully")
@@ -72,8 +88,82 @@ func (a *App) shutdown(ctx context.Context) {
 		a.clipboardMonitor.Stop()
 	}
 
+	if a.hotkeyManager != nil {
+		a.hotkeyManager.Stop()
+	}
+
 	if a.db != nil {
 		a.db.Close()
+	}
+}
+
+// setupHotkeys configures global hotkeys
+func (a *App) setupHotkeys() error {
+	// Register global hotkey for search interface
+	globalHotkey := a.config.GlobalHotkey
+	if globalHotkey == "" {
+		globalHotkey = "Cmd+Shift+Space" // Default hotkey
+	}
+
+	err := a.hotkeyManager.Register(globalHotkey, func() {
+		log.Printf("Global hotkey triggered: %s", globalHotkey)
+		// Emit event to frontend to show search interface
+		runtime.EventsEmit(a.ctx, "show-search-interface")
+	})
+	if err != nil {
+		return err
+	}
+
+	// Register previous item hotkey
+	previousHotkey := a.config.PreviousHotkey
+	if previousHotkey == "" {
+		previousHotkey = "Cmd+Shift+C" // Default hotkey
+	}
+
+	err = a.hotkeyManager.Register(previousHotkey, func() {
+		log.Printf("Previous item hotkey triggered: %s", previousHotkey)
+		// Get the most recent clipboard item and paste it
+		a.pasteLastItem()
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// pasteLastItem copies the most recent clipboard item to system clipboard
+func (a *App) pasteLastItem() {
+	items, err := a.db.GetClipboardItems(1, 0, "")
+	if err != nil {
+		log.Printf("Failed to get recent items: %v", err)
+		return
+	}
+
+	if len(items) > 0 {
+		err := a.clipboardMonitor.CopyItemToClipboard(items[0].ID)
+		if err != nil {
+			log.Printf("Failed to copy item to clipboard: %v", err)
+		} else {
+			log.Printf("Pasted last clipboard item: %s", items[0].PreviewText)
+		}
+	}
+}
+
+// ShowSearchInterface emits an event to show the search interface (callable from frontend)
+func (a *App) ShowSearchInterface() {
+	runtime.EventsEmit(a.ctx, "show-search-interface")
+}
+
+// HideSearchInterface emits an event to hide the search interface (callable from frontend)
+func (a *App) HideSearchInterface() {
+	runtime.EventsEmit(a.ctx, "hide-search-interface")
+}
+
+// TriggerGlobalHotkey manually triggers the global hotkey (for testing)
+func (a *App) TriggerGlobalHotkey() {
+	if a.hotkeyManager != nil {
+		a.hotkeyManager.TriggerHotkey(a.config.GlobalHotkey)
 	}
 }
 

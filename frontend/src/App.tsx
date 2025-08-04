@@ -4,6 +4,11 @@ import ClipboardSearch from "./components/ClipboardSearch";
 import Settings from "./components/Settings";
 import "./style.css";
 
+// Import Wails bindings
+import * as WailsApp from "../wailsjs/go/main/App";
+import { models } from "../wailsjs/go/models";
+import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime";
+
 interface ClipboardItem {
   id: string;
   contentType: "text" | "image" | "file";
@@ -14,93 +19,94 @@ interface ClipboardItem {
   lastAccessed: Date;
 }
 
-interface SettingsData {
-  globalHotkey: string;
-  previousItemHotkey: string;
-  pollingInterval: number;
-  maxItems: number;
-  maxDays: number;
-  autoLaunch: boolean;
-  enableSounds: boolean;
-}
-
 function App() {
-  // TODO: useContext?
+  // State management
   const [clipboardItems, setClipboardItems] = useState<ClipboardItem[]>([]);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isMonitoringPaused, setIsMonitoringPaused] = useState(false);
-  const [settings, setSettings] = useState<SettingsData>({
-    globalHotkey: "⌘⇧V",
-    previousItemHotkey: "⌘⇧C",
-    pollingInterval: 500,
-    maxItems: 100,
-    maxDays: 7,
-    autoLaunch: true,
-    enableSounds: false,
-  });
+  const [settings, setSettings] = useState<models.Settings | null>(null);
 
-  // Mock data for demonstration
+  // Load initial data on component mount
   useEffect(() => {
-    const mockItems: ClipboardItem[] = [
-      {
-        id: "1",
-        contentType: "text",
-        content:
-          "Hello world from the clipboard! This is a longer piece of text to demonstrate how the preview works.",
-        preview:
-          "Hello world from the clipboard! This is a longer piece of text to demonstrate how the preview works.",
-        createdAt: new Date(Date.now() - 300000), // 5 minutes ago
-        isPinned: true,
-        lastAccessed: new Date(Date.now() - 300000),
-      },
-      {
-        id: "2",
-        contentType: "image",
-        content: "/path/to/screenshot.png",
-        preview: "Screenshot_2024_08_02_15_30_45.png",
-        createdAt: new Date(Date.now() - 600000), // 10 minutes ago
-        isPinned: false,
-        lastAccessed: new Date(Date.now() - 600000),
-      },
-      {
-        id: "3",
-        contentType: "text",
-        content:
-          'console.log("Debugging the clipboard manager functionality");',
-        preview:
-          'console.log("Debugging the clipboard manager functionality");',
-        createdAt: new Date(Date.now() - 900000), // 15 minutes ago
-        isPinned: false,
-        lastAccessed: new Date(Date.now() - 900000),
-      },
-      {
-        id: "4",
-        contentType: "file",
-        content: "/Users/ade/Documents/project-files.zip",
-        preview: "~/Documents/project-files.zip",
-        createdAt: new Date(Date.now() - 1800000), // 30 minutes ago
-        isPinned: false,
-        lastAccessed: new Date(Date.now() - 1800000),
-      },
-      {
-        id: "5",
-        contentType: "text",
-        content: "https://github.com/wailsapp/wails",
-        preview: "https://github.com/wailsapp/wails",
-        createdAt: new Date(Date.now() - 3600000), // 1 hour ago
-        isPinned: false,
-        lastAccessed: new Date(Date.now() - 3600000),
-      },
-    ];
-    setClipboardItems(mockItems);
+    loadSettings();
+    loadClipboardItems();
+    checkMonitoringStatus();
+
+    // Listen for backend events
+    const showSearchUnsubscribe = EventsOn("show-search-interface", () => {
+      setIsSearchVisible(true);
+    });
+
+    const hideSearchUnsubscribe = EventsOn("hide-search-interface", () => {
+      setIsSearchVisible(false);
+    });
+
+    return () => {
+      showSearchUnsubscribe();
+      hideSearchUnsubscribe();
+    };
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const loadedSettings = await WailsApp.GetSettings();
+      setSettings(loadedSettings);
+    } catch (error) {
+      console.error("Failed to load settings:", error);
+      // Fallback to default settings
+      const defaultSettings = new models.Settings({
+        id: 0,
+        globalHotkey: "Cmd+Shift+Space",
+        previousItemHotkey: "Cmd+Shift+C",
+        pollingInterval: 500,
+        maxItems: 100,
+        maxDays: 7,
+        autoLaunch: true,
+        enableSounds: false,
+        monitoringEnabled: true,
+        allowPasswords: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      setSettings(defaultSettings);
+    }
+  };
+
+  const loadClipboardItems = async () => {
+    try {
+      const items = await WailsApp.GetClipboardItems(50, 0, "");
+      const convertedItems: ClipboardItem[] = items.map((item) => ({
+        id: item.id,
+        contentType: item.contentType as "text" | "image" | "file",
+        content: item.content,
+        preview: item.preview,
+        createdAt: new Date(item.createdAt),
+        isPinned: item.isPinned,
+        lastAccessed: new Date(item.lastAccessed),
+      }));
+      setClipboardItems(convertedItems);
+    } catch (error) {
+      console.error("Failed to load clipboard items:", error);
+    }
+  };
+
+  const checkMonitoringStatus = async () => {
+    try {
+      const isEnabled = await WailsApp.IsMonitoringEnabled();
+      setIsMonitoringPaused(!isEnabled);
+    } catch (error) {
+      console.error("Failed to check monitoring status:", error);
+    }
+  };
 
   // Global hotkey handling
   useEffect(() => {
+    if (!settings) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for global hotkey (Cmd+Shift+V)
-      if (e.metaKey && e.shiftKey && e.key === "V") {
+      // Check for global hotkey (default: Cmd+Shift+Space)
+      if (e.metaKey && e.shiftKey && e.code === "Space") {
         e.preventDefault();
         setIsSearchVisible(true);
       }
@@ -131,30 +137,49 @@ function App() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [clipboardItems]);
+  }, [clipboardItems, settings]);
 
   // Handlers
-  const handleItemSelect = (item: ClipboardItem) => {
+  const handleItemSelect = async (item: ClipboardItem) => {
     console.log("Selected item:", item);
-    // Update last accessed time
-    setClipboardItems((prev) =>
-      prev.map((i) =>
-        i.id === item.id ? { ...i, lastAccessed: new Date() } : i
-      )
-    );
-    // TODO: Copy to clipboard via Wails binding
+    try {
+      // Copy to clipboard via Wails binding
+      await WailsApp.SelectClipboardItem(item.id);
+
+      // Update last accessed time locally
+      setClipboardItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, lastAccessed: new Date() } : i
+        )
+      );
+
+      // Close search interface
+      setIsSearchVisible(false);
+    } catch (error) {
+      console.error("Failed to select clipboard item:", error);
+    }
   };
 
-  const handleItemDelete = (itemId: string) => {
-    setClipboardItems((prev) => prev.filter((item) => item.id !== itemId));
+  const handleItemDelete = async (itemId: string) => {
+    try {
+      await WailsApp.DeleteClipboardItem(itemId);
+      setClipboardItems((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (error) {
+      console.error("Failed to delete clipboard item:", error);
+    }
   };
 
-  const handleItemPin = (itemId: string, pinned: boolean) => {
-    setClipboardItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, isPinned: pinned } : item
-      )
-    );
+  const handleItemPin = async (itemId: string, pinned: boolean) => {
+    try {
+      await WailsApp.PinClipboardItem(itemId, pinned);
+      setClipboardItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, isPinned: pinned } : item
+        )
+      );
+    } catch (error) {
+      console.error("Failed to pin/unpin clipboard item:", error);
+    }
   };
 
   const handleShowAll = () => {
@@ -165,9 +190,13 @@ function App() {
     setIsSettingsVisible(true);
   };
 
-  const handlePauseMonitoring = () => {
-    setIsMonitoringPaused((prev) => !prev);
-    // TODO: Implement actual monitoring pause via Wails binding
+  const handlePauseMonitoring = async () => {
+    try {
+      const newStatus = await WailsApp.ToggleMonitoring();
+      setIsMonitoringPaused(!newStatus);
+    } catch (error) {
+      console.error("Failed to toggle monitoring:", error);
+    }
   };
 
   const handleQuit = () => {
@@ -175,10 +204,50 @@ function App() {
     console.log("Quit requested");
   };
 
-  const handleSettingsChange = (newSettings: SettingsData) => {
-    setSettings(newSettings);
-    // TODO: Save settings via Wails binding
+  const handleSettingsChange = async (newSettings: models.Settings) => {
+    try {
+      await WailsApp.UpdateSettings(newSettings);
+      setSettings(newSettings);
+
+      // Reload clipboard items if settings changed
+      await loadClipboardItems();
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+    }
   };
+
+  // Handle search with real-time backend integration
+  const handleSearch = async (query: string): Promise<ClipboardItem[]> => {
+    try {
+      const items = await WailsApp.SearchClipboardItems(query, 50);
+      return items.map((item) => ({
+        id: item.id,
+        contentType: item.contentType as "text" | "image" | "file",
+        content: item.content,
+        preview: item.preview,
+        createdAt: new Date(item.createdAt),
+        isPinned: item.isPinned,
+        lastAccessed: new Date(item.lastAccessed),
+      }));
+    } catch (error) {
+      console.error("Failed to search clipboard items:", error);
+      return [];
+    }
+  };
+
+  // Don't render until settings are loaded
+  if (!settings) {
+    return (
+      <div className="min-h-screen bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary font-system flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-8xl mb-6">📋</div>
+          <p className="text-lg text-macos-text-secondary dark:text-macos-dark-text-secondary">
+            Loading Klipd...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary font-system">
@@ -267,6 +336,7 @@ function App() {
         onItemSelect={handleItemSelect}
         onItemDelete={handleItemDelete}
         onItemPin={handleItemPin}
+        onSearch={handleSearch}
         onClose={() => setIsSearchVisible(false)}
         isVisible={isSearchVisible}
       />

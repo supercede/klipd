@@ -1,18 +1,9 @@
 import React, { useState } from "react";
-
-interface Settings {
-  globalHotkey: string;
-  previousItemHotkey: string;
-  pollingInterval: number;
-  maxItems: number;
-  maxDays: number;
-  autoLaunch: boolean;
-  enableSounds: boolean;
-}
+import { models } from "../../wailsjs/go/models";
 
 interface SettingsProps {
-  settings: Settings;
-  onSettingsChange: (settings: Settings) => void;
+  settings: models.Settings;
+  onSettingsChange: (settings: models.Settings) => void;
   onClose: () => void;
   isVisible: boolean;
 }
@@ -26,7 +17,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [activeTab, setActiveTab] = useState<"general" | "advanced" | "about">(
     "general"
   );
-  const [localSettings, setLocalSettings] = useState<Settings>(settings);
+  const [localSettings, setLocalSettings] = useState<models.Settings>(settings);
 
   const handleSave = () => {
     onSettingsChange(localSettings);
@@ -34,15 +25,20 @@ const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleReset = () => {
-    const defaultSettings: Settings = {
-      globalHotkey: "⌘⇧V",
-      previousItemHotkey: "⌘⇧C",
+    const defaultSettings = new models.Settings({
+      id: settings.id,
+      globalHotkey: "Cmd+Shift+Space",
+      previousItemHotkey: "Cmd+Shift+C",
       pollingInterval: 500,
       maxItems: 100,
       maxDays: 7,
       autoLaunch: true,
       enableSounds: false,
-    };
+      monitoringEnabled: true,
+      allowPasswords: false,
+      createdAt: settings.createdAt,
+      updatedAt: new Date(),
+    });
     setLocalSettings(defaultSettings);
   };
 
@@ -111,10 +107,13 @@ const Settings: React.FC<SettingsProps> = ({
                       type="text"
                       value={localSettings.globalHotkey}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          globalHotkey: e.target.value,
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            globalHotkey: e.target.value,
+                          });
+                          return updated;
+                        })
                       }
                       className="w-24 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
                       placeholder="⌘⇧V"
@@ -128,10 +127,13 @@ const Settings: React.FC<SettingsProps> = ({
                       type="text"
                       value={localSettings.previousItemHotkey}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          previousItemHotkey: e.target.value,
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            previousItemHotkey: e.target.value,
+                          });
+                          return updated;
+                        })
                       }
                       className="w-24 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
                       placeholder="⌘⇧C"
@@ -158,10 +160,13 @@ const Settings: React.FC<SettingsProps> = ({
                     <select
                       value={localSettings.pollingInterval}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          pollingInterval: Number(e.target.value),
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            pollingInterval: Number(e.target.value),
+                          });
+                          return updated;
+                        })
                       }
                       className="px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input"
                     >
@@ -196,10 +201,13 @@ const Settings: React.FC<SettingsProps> = ({
                       max="1000"
                       value={localSettings.maxItems}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          maxItems: Number(e.target.value),
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            maxItems: Number(e.target.value),
+                          });
+                          return updated;
+                        })
                       }
                       className="w-20 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
                     />
@@ -219,10 +227,13 @@ const Settings: React.FC<SettingsProps> = ({
                       max="365"
                       value={localSettings.maxDays}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          maxDays: Number(e.target.value),
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            maxDays: Number(e.target.value),
+                          });
+                          return updated;
+                        })
                       }
                       className="w-20 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
                     />
@@ -241,10 +252,13 @@ const Settings: React.FC<SettingsProps> = ({
                       type="checkbox"
                       checked={localSettings.autoLaunch}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          autoLaunch: e.target.checked,
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            autoLaunch: e.target.checked,
+                          });
+                          return updated;
+                        })
                       }
                       className="mr-3 rounded"
                     />
@@ -262,10 +276,13 @@ const Settings: React.FC<SettingsProps> = ({
                       type="checkbox"
                       checked={localSettings.enableSounds}
                       onChange={(e) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          enableSounds: e.target.checked,
-                        }))
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            enableSounds: e.target.checked,
+                          });
+                          return updated;
+                        })
                       }
                       className="mr-3 rounded"
                     />
@@ -285,13 +302,74 @@ const Settings: React.FC<SettingsProps> = ({
 
           {activeTab === "advanced" && (
             <div className="space-y-6">
-              <div className="text-center py-12">
-                <div className="text-4xl mb-3">🔧</div>
-                <div className="text-lg font-medium text-macos-text-primary dark:text-macos-dark-text-primary mb-2">
-                  Advanced Settings
+              <div>
+                <h3 className="text-lg font-medium text-macos-text-primary dark:text-macos-dark-text-primary mb-4">
+                  Privacy & Security
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-macos-text-primary dark:text-macos-dark-text-primary">
+                        Allow Password Capture
+                      </label>
+                      <p className="text-xs text-macos-text-secondary dark:text-macos-dark-text-secondary mt-1">
+                        When enabled, passwords and sensitive content will be
+                        captured in clipboard history
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.allowPasswords}
+                        onChange={(e) =>
+                          setLocalSettings((prev) => {
+                            const updated = new models.Settings({
+                              ...prev,
+                              allowPasswords: e.target.checked,
+                            });
+                            return updated;
+                          })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-macos-bg-tertiary dark:bg-macos-dark-bg-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-macos-accent-blue"></div>
+                    </label>
+                  </div>
                 </div>
-                <div className="text-sm text-macos-text-secondary dark:text-macos-dark-text-secondary">
-                  Coming soon in a future update
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-macos-text-primary dark:text-macos-dark-text-primary mb-4">
+                  Monitoring
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-macos-text-primary dark:text-macos-dark-text-primary">
+                        Clipboard Monitoring
+                      </label>
+                      <p className="text-xs text-macos-text-secondary dark:text-macos-dark-text-secondary mt-1">
+                        Enable or disable clipboard content monitoring
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.monitoringEnabled}
+                        onChange={(e) =>
+                          setLocalSettings((prev) => {
+                            const updated = new models.Settings({
+                              ...prev,
+                              monitoringEnabled: e.target.checked,
+                            });
+                            return updated;
+                          })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-macos-bg-tertiary dark:bg-macos-dark-bg-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-macos-accent-blue"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

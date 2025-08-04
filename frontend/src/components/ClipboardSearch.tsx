@@ -16,6 +16,7 @@ interface ClipboardSearchProps {
   onItemDelete: (id: string) => void;
   onItemPin: (id: string, pinned: boolean) => void;
   onClose: () => void;
+  onSearch?: (query: string) => Promise<ClipboardItem[]>;
   isVisible: boolean;
 }
 
@@ -25,10 +26,13 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   onItemDelete,
   onItemPin,
   onClose,
+  onSearch,
   isVisible,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [searchResults, setSearchResults] = useState<ClipboardItem[]>(items);
+  const [isSearching, setIsSearching] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -37,11 +41,36 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const itemsContainerRef = useRef<HTMLDivElement>(null);
 
-  const filteredItems = items.filter((item) =>
-    item.preview.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Update search results when items change or when there's no search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(items);
+    }
+  }, [items, searchQuery]);
 
-  const sortedItems = [...filteredItems].sort((a, b) => {
+  // Handle search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (searchQuery.trim() && onSearch) {
+        setIsSearching(true);
+        try {
+          const results = await onSearch(searchQuery);
+          setSearchResults(results);
+        } catch (error) {
+          console.error("Search failed:", error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      } else if (!searchQuery.trim()) {
+        setSearchResults(items);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, onSearch, items]);
+
+  const sortedItems = [...searchResults].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     return (
@@ -190,7 +219,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
         <div className="p-4 border-b border-macos-border dark:border-macos-dark-border">
           <div className="relative">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-macos-text-tertiary dark:text-macos-dark-text-tertiary">
-              🔍
+              {isSearching ? "⏳" : "🔍"}
             </span>
             <input
               ref={searchInputRef}

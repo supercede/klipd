@@ -22,7 +22,7 @@ type ClipboardItem struct {
 // Settings represents application configuration
 type Settings struct {
 	ID                 uint      `gorm:"primaryKey" json:"id"`
-	GlobalHotkey       string    `gorm:"default:'Cmd+Shift+V'" json:"globalHotkey"`
+	GlobalHotkey       string    `gorm:"default:'Cmd+Shift+Space'" json:"globalHotkey"`
 	PreviousItemHotkey string    `gorm:"default:'Cmd+Shift+C'" json:"previousItemHotkey"`
 	PollingInterval    int       `gorm:"default:500" json:"pollingInterval"` // milliseconds
 	MaxItems           int       `gorm:"default:100" json:"maxItems"`
