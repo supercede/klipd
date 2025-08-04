@@ -55,6 +55,7 @@ export namespace models {
 	    enableSounds: boolean;
 	    monitoringEnabled: boolean;
 	    allowPasswords: boolean;
+	    sortByRecent: string;
 	    // Go type: time
 	    createdAt: any;
 	    // Go type: time
@@ -76,6 +77,7 @@ export namespace models {
 	        this.enableSounds = source["enableSounds"];
 	        this.monitoringEnabled = source["monitoringEnabled"];
 	        this.allowPasswords = source["allowPasswords"];
+	        this.sortByRecent = source["sortByRecent"];
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.updatedAt = this.convertValues(source["updatedAt"], null);
 	    }

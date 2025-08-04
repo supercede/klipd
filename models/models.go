@@ -30,7 +30,8 @@ type Settings struct {
 	AutoLaunch         bool      `gorm:"default:true" json:"autoLaunch"`
 	EnableSounds       bool      `gorm:"default:false" json:"enableSounds"`
 	MonitoringEnabled  bool      `gorm:"default:true" json:"monitoringEnabled"`
-	AllowPasswords     bool      `gorm:"default:false" json:"allowPasswords"` // Allow copying password-like content
+	AllowPasswords     bool      `gorm:"default:false" json:"allowPasswords"`  // Allow copying password-like content
+	SortByRecent       string    `gorm:"default:'copied'" json:"sortByRecent"` // 'copied' or 'pasted' - secondary sort after pinned items
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
 }

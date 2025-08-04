@@ -36,6 +36,7 @@ const Settings: React.FC<SettingsProps> = ({
       enableSounds: false,
       monitoringEnabled: true,
       allowPasswords: false,
+      sortByRecent: "copied",
       createdAt: settings.createdAt,
       updatedAt: new Date(),
     });
@@ -237,6 +238,33 @@ const Settings: React.FC<SettingsProps> = ({
                       }
                       className="w-20 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
                     />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm text-macos-text-primary dark:text-macos-dark-text-primary">
+                        Sort priority
+                      </label>
+                      <p className="text-xs text-macos-text-secondary dark:text-macos-dark-text-secondary">
+                        After pinned items, show recently copied or recently
+                        pasted first
+                      </p>
+                    </div>
+                    <select
+                      value={localSettings.sortByRecent || "copied"}
+                      onChange={(e) =>
+                        setLocalSettings((prev) => {
+                          const updated = new models.Settings({
+                            ...prev,
+                            sortByRecent: e.target.value as "copied" | "pasted",
+                          });
+                          return updated;
+                        })
+                      }
+                      className="px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input"
+                    >
+                      <option value="copied">Recently copied</option>
+                      <option value="pasted">Recently pasted</option>
+                    </select>
                   </div>
                 </div>
               </div>

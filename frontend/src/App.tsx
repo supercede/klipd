@@ -365,6 +365,9 @@ function App() {
         onSearch={handleSearch}
         onClose={() => setIsSearchVisible(false)}
         isVisible={isSearchVisible}
+        sortByRecent={
+          (settings?.sortByRecent as "copied" | "pasted") || "copied"
+        }
       />
 
       {/* Settings */}

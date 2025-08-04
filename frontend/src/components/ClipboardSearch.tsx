@@ -18,6 +18,7 @@ interface ClipboardSearchProps {
   onClose: () => void;
   onSearch?: (query: string, useRegex?: boolean) => Promise<ClipboardItem[]>;
   isVisible: boolean;
+  sortByRecent?: "copied" | "pasted";
 }
 
 const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
@@ -28,6 +29,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   onClose,
   onSearch,
   isVisible,
+  sortByRecent = "copied",
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -58,7 +60,6 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
           const results = await onSearch(searchQuery, useRegex);
           setSearchResults(results);
         } catch (error) {
-          console.error("Search failed:", error);
           setSearchResults([]);
         } finally {
           setIsSearching(false);
@@ -74,9 +75,15 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   const sortedItems = [...searchResults].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
-    return (
-      new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime()
-    );
+
+    // Second priority: Sort by recent activity based on user preference
+    if (sortByRecent === "copied") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    } else {
+      return (
+        new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime()
+      );
+    }
   });
 
   useEffect(() => {
@@ -139,15 +146,23 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isVisible, selectedIndex, sortedItems, onItemSelect, onClose]);
 
-  // Click outside to close
+  // Click outside to close - Fixed to properly handle context menu
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (contextMenu) {
+      const target = e.target as HTMLElement;
+
+      // If clicking on context menu, don't close anything
+      if (target.closest("[data-context-menu]")) {
+        return;
+      }
+
+      // If context menu is open and clicking outside of it, close context menu
+      if (contextMenu && !target.closest("[data-context-menu]")) {
         setContextMenu(null);
         return;
       }
 
-      const target = e.target as HTMLElement;
+      // If clicking outside the search interface, close the whole component
       if (!target.closest("[data-search-interface]")) {
         onClose();
       }
@@ -194,6 +209,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent, itemId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -207,6 +223,26 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
     onClose();
   };
 
+  const handlePinClick = (
+    e: React.MouseEvent,
+    itemId: string,
+    isPinned: boolean
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    onItemPin(itemId, !isPinned);
+    setContextMenu(null);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, itemId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log(`Context menu delete clicked for item:`, itemId);
+    onItemDelete(itemId);
+    setContextMenu(null);
+  };
+
   if (!isVisible) return null;
 
   return (
@@ -215,11 +251,11 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
       <div
         data-search-interface
-        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[600px] max-h-[450px] bg-macos-bg-primary dark:bg-macos-dark-bg-primary backdrop-blur-macos rounded-macos shadow-macos dark:shadow-macos-dark border border-macos-border dark:border-macos-dark-border animate-slide-in"
+        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[600px] max-h-[450px] bg-white dark:bg-gray-800 backdrop-blur rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 animate-slide-in"
       >
-        <div className="p-4 border-b border-macos-border dark:border-macos-dark-border">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-macos-text-tertiary dark:text-macos-dark-text-tertiary">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
               {isSearching ? "⏳" : "🔍"}
             </span>
             <input
@@ -232,14 +268,14 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-20 py-3 bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-macos-text-primary dark:text-macos-dark-text-primary placeholder-macos-text-tertiary dark:placeholder-macos-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-macos-accent-blue dark:focus:ring-macos-dark-accent-blue focus:border-transparent"
+              className="w-full pl-10 pr-20 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button
               onClick={() => setUseRegex(!useRegex)}
               className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs font-medium rounded transition-colors duration-150 ${
                 useRegex
-                  ? "bg-macos-accent-blue text-white"
-                  : "bg-macos-bg-tertiary dark:bg-macos-dark-bg-tertiary text-macos-text-secondary dark:text-macos-dark-text-secondary hover:bg-macos-bg-quaternary dark:hover:bg-macos-dark-bg-quaternary"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
               }`}
               title={useRegex ? "Disable regex search" : "Enable regex search"}
             >
@@ -255,10 +291,10 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
               {sortedItems.slice(0, 9).map((item, index) => (
                 <div
                   key={item.id}
-                  className={`group flex items-center px-3 py-3 cursor-pointer rounded-macos-input transition-all duration-150 ${
+                  className={`group flex items-center px-3 py-3 cursor-pointer rounded-lg transition-all duration-150 ${
                     index === selectedIndex
-                      ? "bg-macos-accent-blue text-white scale-[1.02]"
-                      : "hover:bg-macos-bg-tertiary dark:hover:bg-macos-dark-bg-tertiary"
+                      ? "bg-blue-500 text-white scale-[1.02]"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                   onClick={() => handleItemClick(item, index)}
                   onContextMenu={(e) => handleContextMenu(e, item.id)}
@@ -270,7 +306,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
                       {getContentIcon(item.contentType)}
                     </span>
                     {item.isPinned && (
-                      <span className="text-xs ml-1 text-macos-accent-blue group-hover:text-white">
+                      <span className="text-xs ml-1 text-blue-500 group-hover:text-white">
                         📌
                       </span>
                     )}
@@ -285,7 +321,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
                       className={`text-xs mt-1 ${
                         index === selectedIndex
                           ? "text-white/70"
-                          : "text-macos-text-tertiary dark:text-macos-dark-text-tertiary"
+                          : "text-gray-500 dark:text-gray-400"
                       }`}
                     >
                       {formatTime(item.createdAt)}
@@ -297,7 +333,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
                     className={`text-xs ml-3 font-medium ${
                       index === selectedIndex
                         ? "text-white/70"
-                        : "text-macos-text-tertiary dark:text-macos-dark-text-tertiary"
+                        : "text-gray-400"
                     }`}
                   >
                     ⌘{index + 1}
@@ -308,10 +344,10 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
           ) : (
             <div className="p-8 text-center">
               <div className="text-4xl mb-3">🔍</div>
-              <div className="text-lg font-medium text-macos-text-primary dark:text-macos-dark-text-primary mb-1">
+              <div className="text-lg font-medium text-gray-900 dark:text-white mb-1">
                 No matching results
               </div>
-              <div className="text-sm text-macos-text-secondary dark:text-macos-dark-text-secondary">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 Try a different search term
               </div>
             </div>
@@ -321,45 +357,36 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
       {/* Context Menu */}
       {contextMenu && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setContextMenu(null)}
-          />
-          <div
-            className="fixed z-50 w-48 bg-macos-bg-primary dark:bg-macos-dark-bg-primary backdrop-blur-macos rounded-macos shadow-macos dark:shadow-macos-dark border border-macos-border dark:border-macos-dark-border p-1"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            {(() => {
-              const item = items.find((i) => i.id === contextMenu.itemId);
-              return item ? (
-                <>
-                  <button
-                    onClick={() => {
-                      onItemPin(contextMenu.itemId, !item.isPinned);
-                      setContextMenu(null);
-                    }}
-                    className="w-full flex items-center px-3 py-2 text-left hover:bg-macos-accent-blue hover:text-white rounded-macos-input transition-colors duration-150 text-sm"
-                  >
-                    <span className="mr-3">{item.isPinned ? "📌" : "📍"}</span>
-                    {item.isPinned ? "Unpin" : "Pin"}
-                  </button>
+        <div
+          data-context-menu
+          className="fixed z-50 w-48 bg-macos-bg-primary dark:bg-macos-dark-bg-primary backdrop-blur-macos rounded-macos shadow-macos dark:shadow-macos-dark border border-macos-border dark:border-macos-dark-border p-1"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {(() => {
+            const item = sortedItems.find((i) => i.id === contextMenu.itemId);
+            return item ? (
+              <>
+                <button
+                  onClick={(e) =>
+                    handlePinClick(e, contextMenu.itemId, item.isPinned)
+                  }
+                  className="w-full flex items-center px-3 py-2 text-left hover:bg-macos-accent-blue hover:text-white rounded-macos-input transition-colors duration-150 text-sm"
+                >
+                  <span className="mr-3">{item.isPinned ? "📌" : "📍"}</span>
+                  {item.isPinned ? "Unpin" : "Pin"}
+                </button>
 
-                  <button
-                    onClick={() => {
-                      onItemDelete(contextMenu.itemId);
-                      setContextMenu(null);
-                    }}
-                    className="w-full flex items-center px-3 py-2 text-left hover:bg-macos-accent-red hover:text-white rounded-macos-input transition-colors duration-150 text-sm"
-                  >
-                    <span className="mr-3">🗑️</span>
-                    Delete
-                  </button>
-                </>
-              ) : null;
-            })()}
-          </div>
-        </>
+                <button
+                  onClick={(e) => handleDeleteClick(e, contextMenu.itemId)}
+                  className="w-full flex items-center px-3 py-2 text-left hover:bg-macos-accent-red hover:text-white rounded-macos-input transition-colors duration-150 text-sm"
+                >
+                  <span className="mr-3">🗑️</span>
+                  Delete
+                </button>
+              </>
+            ) : null;
+          })()}
+        </div>
       )}
     </>
   );
