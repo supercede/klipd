@@ -22,6 +22,10 @@ export function GetClipboardItems(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetClipboardItems'](arg1, arg2, arg3);
 }
 
+export function GetClipboardItemsPaginated(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetClipboardItemsPaginated'](arg1, arg2, arg3);
+}
+
 export function GetMonitoringStatus() {
   return window['go']['main']['App']['GetMonitoringStatus']();
 }
@@ -44,6 +48,10 @@ export function PinClipboardItem(arg1, arg2) {
 
 export function SearchClipboardItems(arg1, arg2) {
   return window['go']['main']['App']['SearchClipboardItems'](arg1, arg2);
+}
+
+export function SearchClipboardItemsPaginated(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SearchClipboardItemsPaginated'](arg1, arg2, arg3, arg4);
 }
 
 export function SearchClipboardItemsRegex(arg1, arg2) {

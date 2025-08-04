@@ -53,7 +53,7 @@ func TestSearchClipboardItemsRegex(t *testing.T) {
 	// Test regex search for email pattern
 	// Note: This test may fail if SQLite doesn't have regex support compiled in
 	// In that case, we'll just verify the method exists and handles the query
-	results, err := db.SearchClipboardItemsRegex(`.*@.*\.com`, 10)
+	results, err := db.SearchClipboardItemsRegex(`.*@.*\.com`, 10, 0, "copied")
 
 	// The test might fail with "no such function: REGEXP" if regex isn't available
 	// That's expected behavior for basic SQLite installations
@@ -140,7 +140,7 @@ func TestSearchClipboardItemsRegexPatterns(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			results, err := db.SearchClipboardItemsRegex(tc.pattern, 10)
+			results, err := db.SearchClipboardItemsRegex(tc.pattern, 10, 0, "copied")
 
 			if err != nil && err.Error() == "no such function: REGEXP" {
 				t.Skip("SQLite REGEXP function not available - this is expected for basic installations")
@@ -198,7 +198,7 @@ func TestSearchClipboardItemsRegexOrdering(t *testing.T) {
 	}
 
 	// Search for email pattern - should return all 3, ordered by pinned first, then last_accessed DESC
-	results, err := db.SearchClipboardItemsRegex(`.*@.*\.com`, 10)
+	results, err := db.SearchClipboardItemsRegex(`.*@.*\.com`, 10, 0, "copied")
 
 	if err != nil && err.Error() == "no such function: REGEXP" {
 		t.Skip("SQLite REGEXP function not available - this is expected for basic installations")
@@ -239,7 +239,7 @@ func TestSearchClipboardItemsRegexLimits(t *testing.T) {
 	}
 
 	// Test limit functionality
-	results, err := db.SearchClipboardItemsRegex(`test.*@example\.com`, 3)
+	results, err := db.SearchClipboardItemsRegex(`test.*@example\.com`, 3, 0, "copied")
 
 	if err != nil && err.Error() == "no such function: REGEXP" {
 		t.Skip("SQLite REGEXP function not available - this is expected for basic installations")
@@ -249,7 +249,7 @@ func TestSearchClipboardItemsRegexLimits(t *testing.T) {
 		assert.Len(t, results, 3)
 
 		// Test with limit larger than available items
-		results, err = db.SearchClipboardItemsRegex(`test.*@example\.com`, 10)
+		results, err = db.SearchClipboardItemsRegex(`test.*@example\.com`, 10, 0, "copied")
 		require.NoError(t, err)
 		assert.Len(t, results, 5)
 	}

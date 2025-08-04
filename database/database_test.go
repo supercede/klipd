@@ -87,7 +87,7 @@ func TestCreateClipboardItemDuplicate(t *testing.T) {
 	err = db.CreateClipboardItem(item2)
 	assert.NoError(t, err)
 
-	items, err := db.GetClipboardItems(10, 0, "")
+	items, err := db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, items, 2)
 }
@@ -130,22 +130,22 @@ func TestGetClipboardItems(t *testing.T) {
 	}
 
 	// Test pagination
-	retrieved, err := db.GetClipboardItems(2, 0, "")
+	retrieved, err := db.GetClipboardItems(2, 0, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 2)
 
 	// Test with offset
-	retrieved, err = db.GetClipboardItems(2, 1, "")
+	retrieved, err = db.GetClipboardItems(2, 1, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 2)
 
 	// Test content type filter
-	retrieved, err = db.GetClipboardItems(10, 0, "text")
+	retrieved, err = db.GetClipboardItems(10, 0, "text", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 3)
 
 	// Test non-matching content type filter
-	retrieved, err = db.GetClipboardItems(10, 0, "image")
+	retrieved, err = db.GetClipboardItems(10, 0, "image", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 0)
 }
@@ -164,21 +164,21 @@ func TestSearchClipboardItems(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	results, err := db.SearchClipboardItems("Hello", 10)
+	results, err := db.SearchClipboardItems("Hello", 10, 0, "copied")
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
 	assert.Equal(t, "search-1", results[0].ID)
 
-	results, err = db.SearchClipboardItems("hello", 10)
+	results, err = db.SearchClipboardItems("hello", 10, 0, "copied")
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
 
-	results, err = db.SearchClipboardItems("program", 10)
+	results, err = db.SearchClipboardItems("program", 10, 0, "copied")
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
 	assert.Equal(t, "search-2", results[0].ID)
 
-	results, err = db.SearchClipboardItems("nonexistent", 10)
+	results, err = db.SearchClipboardItems("nonexistent", 10, 0, "copied")
 	assert.NoError(t, err)
 	assert.Len(t, results, 0)
 }
@@ -261,7 +261,7 @@ func TestClearAllClipboardItems(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify only pinned item remains
-	allItems, err := db.GetClipboardItems(10, 0, "")
+	allItems, err := db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, allItems, 1)
 	assert.Equal(t, "clear-2", allItems[0].ID)
@@ -272,7 +272,7 @@ func TestClearAllClipboardItems(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify no items remain
-	allItems, err = db.GetClipboardItems(10, 0, "")
+	allItems, err = db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, allItems, 0)
 }
@@ -297,7 +297,7 @@ func TestClearClipboardItemsByType(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify results
-	allItems, err := db.GetClipboardItems(10, 0, "")
+	allItems, err := db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, allItems, 2) // Should have image item and pinned text item
 
@@ -306,7 +306,7 @@ func TestClearClipboardItemsByType(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify only image item remains
-	allItems, err = db.GetClipboardItems(10, 0, "")
+	allItems, err = db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 	assert.Len(t, allItems, 1)
 	assert.Equal(t, "image", allItems[0].ContentType)
@@ -375,7 +375,7 @@ func TestCleanupOldItems(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify results - old unpinned items should be removed
-	allItems, err := db.GetClipboardItems(10, 0, "")
+	allItems, err := db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 
 	// Should have recent item and old pinned item (old unpinned item should be removed)
@@ -449,6 +449,6 @@ func TestClose(t *testing.T) {
 	err := db.Close()
 	assert.NoError(t, err)
 
-	_, err = db.GetClipboardItems(10, 0, "")
+	_, err = db.GetClipboardItems(10, 0, "", "copied")
 	assert.Error(t, err)
 }

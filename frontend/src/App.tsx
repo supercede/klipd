@@ -92,7 +92,7 @@ function App() {
 
   const loadClipboardItems = async () => {
     try {
-      const items = await WailsApp.GetClipboardItems(50, 0, "");
+      const items = await WailsApp.GetClipboardItemsPaginated(15, 0, "");
       const convertedItems: ClipboardItem[] = items.map((item) => ({
         id: item.id,
         contentType: item.contentType as "text" | "image" | "file",
@@ -233,20 +233,31 @@ function App() {
     }
   };
 
-  // Handle search with real-time backend integration
+  // Handle search with real-time backend integration and pagination
   const handleSearch = async (
     query: string,
-    useRegex: boolean = false
+    useRegex: boolean = false,
+    limit: number = 15,
+    offset: number = 0
   ): Promise<ClipboardItem[]> => {
     try {
       let items;
       if (useRegex) {
-        items = await WailsApp.SearchClipboardItemsRegex(query, 50);
+        // Use existing regex function (no paginated version available yet)
+        items = await WailsApp.SearchClipboardItemsRegex(query, limit);
       } else {
-        items = await WailsApp.SearchClipboardItems(query, 50);
+        // Use new paginated search function
+        const sortByRecent =
+          (settings?.sortByRecent as "copied" | "pasted") || "copied";
+        items = await WailsApp.SearchClipboardItemsPaginated(
+          query,
+          limit,
+          offset,
+          sortByRecent === "copied"
+        );
       }
 
-      return items.map((item) => ({
+      return items.map((item: any) => ({
         id: item.id,
         contentType: item.contentType as "text" | "image" | "file",
         content: item.content,
@@ -257,6 +268,34 @@ function App() {
       }));
     } catch (error) {
       console.error("Failed to search clipboard items:", error);
+      return [];
+    }
+  };
+
+  // Handle loading more items for infinite scroll
+  const handleLoadMore = async (
+    limit: number = 15,
+    offset: number = 0
+  ): Promise<ClipboardItem[]> => {
+    try {
+      // Use new paginated function with user's sort preference
+      const items = await WailsApp.GetClipboardItemsPaginated(
+        limit,
+        offset,
+        ""
+      );
+
+      return items.map((item: any) => ({
+        id: item.id,
+        contentType: item.contentType as "text" | "image" | "file",
+        content: item.content,
+        preview: item.preview,
+        createdAt: new Date(item.createdAt),
+        isPinned: item.isPinned,
+        lastAccessed: new Date(item.lastAccessed),
+      }));
+    } catch (error) {
+      console.error("Failed to load more clipboard items:", error);
       return [];
     }
   };
@@ -363,6 +402,7 @@ function App() {
         onItemDelete={handleItemDelete}
         onItemPin={handleItemPin}
         onSearch={handleSearch}
+        onLoadMore={handleLoadMore}
         onClose={() => setIsSearchVisible(false)}
         isVisible={isSearchVisible}
         sortByRecent={

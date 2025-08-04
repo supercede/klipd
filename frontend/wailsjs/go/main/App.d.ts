@@ -12,6 +12,8 @@ export function GetClipboardItemByID(arg1:string):Promise<models.ClipboardItem>;
 
 export function GetClipboardItems(arg1:number,arg2:number,arg3:string):Promise<Array<models.ClipboardItem>>;
 
+export function GetClipboardItemsPaginated(arg1:number,arg2:number,arg3:string):Promise<Array<models.ClipboardItem>>;
+
 export function GetMonitoringStatus():Promise<Record<string, any>>;
 
 export function GetSettings():Promise<models.Settings>;
@@ -23,6 +25,8 @@ export function IsMonitoringEnabled():Promise<boolean>;
 export function PinClipboardItem(arg1:string,arg2:boolean):Promise<void>;
 
 export function SearchClipboardItems(arg1:string,arg2:number):Promise<Array<models.ClipboardItem>>;
+
+export function SearchClipboardItemsPaginated(arg1:string,arg2:number,arg3:number,arg4:boolean):Promise<Array<models.ClipboardItem>>;
 
 export function SearchClipboardItemsRegex(arg1:string,arg2:number):Promise<Array<models.ClipboardItem>>;
 

@@ -247,11 +247,21 @@ func (cm *ClipboardMonitor) performCleanup() {
 }
 
 func (cm *ClipboardMonitor) GetRecentItems(limit int) ([]models.ClipboardItem, error) {
-	return cm.db.GetClipboardItems(limit, 0, "")
+	settings, err := cm.db.GetSettings()
+	sortByRecent := "copied"
+	if err == nil {
+		sortByRecent = settings.SortByRecent
+	}
+	return cm.db.GetClipboardItems(limit, 0, "", sortByRecent)
 }
 
 func (cm *ClipboardMonitor) SearchItems(query string, limit int) ([]models.ClipboardItem, error) {
-	return cm.db.SearchClipboardItems(query, limit)
+	settings, err := cm.db.GetSettings()
+	sortByRecent := "copied"
+	if err == nil {
+		sortByRecent = settings.SortByRecent
+	}
+	return cm.db.SearchClipboardItems(query, limit, 0, sortByRecent)
 }
 
 func (cm *ClipboardMonitor) PinItem(id string, pinned bool) error {

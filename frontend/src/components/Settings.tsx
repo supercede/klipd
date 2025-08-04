@@ -49,12 +49,12 @@ const Settings: React.FC<SettingsProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-200"
         onClick={onClose}
       />
 
       {/* Settings Window */}
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[520px] h-[650px] bg-macos-bg-primary dark:bg-macos-dark-bg-primary rounded-macos shadow-macos dark:shadow-macos-dark border border-macos-border dark:border-macos-dark-border animate-scale-in flex flex-col">
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[520px] h-[650px] bg-macos-bg-primary dark:bg-macos-dark-bg-primary rounded-macos shadow-macos dark:shadow-macos-dark border border-macos-border dark:border-macos-dark-border transition-all duration-200 ease-out scale-100 opacity-100 flex flex-col">
         {/* Title Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-macos-border dark:border-macos-dark-border flex-shrink-0">
           <h1 className="text-lg font-semibold text-macos-text-primary dark:text-macos-dark-text-primary">
@@ -420,10 +420,10 @@ const Settings: React.FC<SettingsProps> = ({
               </div>
 
               <div className="space-y-3">
-                <button className="w-full flex items-center justify-center px-4 py-2 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-button hover:bg-macos-bg-tertiary dark:hover:bg-macos-dark-bg-tertiary transition-colors">
+                {/* <button className="w-full flex items-center justify-center px-4 py-2 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-button hover:bg-macos-bg-tertiary dark:hover:bg-macos-dark-bg-tertiary transition-colors">
                   <span className="mr-2">📄</span>
                   Export Clipboard History
-                </button>
+                </button> */}
                 <button
                   onClick={handleReset}
                   className="w-full flex items-center justify-center px-4 py-2 text-sm bg-macos-accent-red text-white rounded-macos-button hover:bg-red-500 transition-colors"

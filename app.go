@@ -137,7 +137,7 @@ func (a *App) setupHotkeys() error {
 
 // pasteLastItem copies the most recent clipboard item to system clipboard
 func (a *App) pasteLastItem() {
-	items, err := a.db.GetClipboardItems(1, 0, "")
+	items, err := a.db.GetClipboardItems(1, 0, "", "copied")
 	if err != nil {
 		log.Printf("Failed to get recent items: %v", err)
 		return
@@ -172,7 +172,15 @@ func (a *App) TriggerGlobalHotkey() {
 
 // GetClipboardItems returns clipboard items with optional pagination and filtering
 func (a *App) GetClipboardItems(limit int, offset int, contentType string) ([]models.ClipboardItem, error) {
-	return a.db.GetClipboardItems(limit, offset, contentType)
+	settings, err := a.db.GetSettings()
+	if err != nil {
+		return a.db.GetClipboardItems(limit, offset, contentType, "copied")
+	}
+	return a.db.GetClipboardItems(limit, offset, contentType, settings.SortByRecent)
+}
+
+func (a *App) GetClipboardItemsPaginated(limit int, offset int, contentType string) ([]models.ClipboardItem, error) {
+	return a.GetClipboardItems(limit, offset, contentType)
 }
 
 // SearchClipboardItems searches clipboard items by content
@@ -180,12 +188,34 @@ func (a *App) SearchClipboardItems(query string, limit int) ([]models.ClipboardI
 	if query == "" {
 		return a.GetClipboardItems(limit, 0, "")
 	}
-	return a.clipboardMonitor.SearchItems(query, limit)
+	return a.SearchClipboardItemsPaginated(query, limit, 0, false)
+}
+
+func (a *App) SearchClipboardItemsPaginated(query string, limit int, offset int, useRegex bool) ([]models.ClipboardItem, error) {
+	settings, err := a.db.GetSettings()
+	sortByRecent := "copied"
+	if err == nil {
+		sortByRecent = settings.SortByRecent
+	}
+
+	if query == "" {
+		return a.db.GetClipboardItems(limit, offset, "", sortByRecent)
+	}
+
+	if useRegex {
+		return a.db.SearchClipboardItemsRegex(query, limit, offset, sortByRecent)
+	}
+	return a.db.SearchClipboardItems(query, limit, offset, sortByRecent)
 }
 
 // SearchClipboardItemsRegex searches clipboard items using regex patterns
 func (a *App) SearchClipboardItemsRegex(regexPattern string, limit int) ([]models.ClipboardItem, error) {
-	return a.db.SearchClipboardItemsRegex(regexPattern, limit)
+	settings, err := a.db.GetSettings()
+	sortByRecent := "copied"
+	if err == nil {
+		sortByRecent = settings.SortByRecent
+	}
+	return a.db.SearchClipboardItemsRegex(regexPattern, limit, 0, sortByRecent)
 }
 
 // GetClipboardItemByID retrieves a specific clipboard item
@@ -250,7 +280,6 @@ func (a *App) UpdateSettings(settings *models.Settings) error {
 	return nil
 }
 
-// ToggleMonitoring pauses or resumes clipboard monitoring
 func (a *App) ToggleMonitoring() bool {
 	if a.config.MonitoringEnabled {
 		a.config.MonitoringEnabled = false

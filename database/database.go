@@ -125,7 +125,7 @@ func (d *Database) CreateClipboardItem(item *models.ClipboardItem) error {
 	return d.DB.Create(item).Error
 }
 
-func (d *Database) GetClipboardItems(limit int, offset int, contentType string) ([]models.ClipboardItem, error) {
+func (d *Database) GetClipboardItems(limit int, offset int, contentType string, sortByRecent string) ([]models.ClipboardItem, error) {
 	var items []models.ClipboardItem
 	query := d.DB.Model(&models.ClipboardItem{})
 
@@ -133,7 +133,14 @@ func (d *Database) GetClipboardItems(limit int, offset int, contentType string) 
 		query = query.Where("content_type = ?", contentType)
 	}
 
-	err := query.Order("is_pinned DESC, last_accessed DESC").
+	var orderClause string
+	if sortByRecent == "copied" {
+		orderClause = "is_pinned DESC, created_at DESC"
+	} else {
+		orderClause = "is_pinned DESC, last_accessed DESC"
+	}
+
+	err := query.Order(orderClause).
 		Limit(limit).
 		Offset(offset).
 		Find(&items).Error
@@ -141,22 +148,38 @@ func (d *Database) GetClipboardItems(limit int, offset int, contentType string) 
 	return items, err
 }
 
-func (d *Database) SearchClipboardItems(searchTerm string, limit int) ([]models.ClipboardItem, error) {
+func (d *Database) SearchClipboardItems(searchTerm string, limit int, offset int, sortByRecent string) ([]models.ClipboardItem, error) {
 	var items []models.ClipboardItem
+
+	var orderClause string
+	if sortByRecent == "copied" {
+		orderClause = "is_pinned DESC, created_at DESC"
+	} else {
+		orderClause = "is_pinned DESC, last_accessed DESC"
+	}
+
 	err := d.DB.Where("preview_text LIKE ?", "%"+searchTerm+"%").
-		Order("is_pinned DESC, last_accessed DESC").
+		Order(orderClause).
 		Limit(limit).
+		Offset(offset).
 		Find(&items).Error
 	return items, err
 }
 
-// For better cross-platform support, consider implementing regex filtering in Go
-func (d *Database) SearchClipboardItemsRegex(regexPattern string, limit int) ([]models.ClipboardItem, error) {
+func (d *Database) SearchClipboardItemsRegex(regexPattern string, limit int, offset int, sortByRecent string) ([]models.ClipboardItem, error) {
 	var items []models.ClipboardItem
+	var orderClause string
+	if sortByRecent == "copied" {
+		orderClause = "is_pinned DESC, created_at DESC"
+	} else {
+		orderClause = "is_pinned DESC, last_accessed DESC"
+	}
+
 	// SQLite REGEXP operator (if available)
 	err := d.DB.Where("preview_text REGEXP ?", regexPattern).
-		Order("is_pinned DESC, last_accessed DESC").
+		Order(orderClause).
 		Limit(limit).
+		Offset(offset).
 		Find(&items).Error
 	return items, err
 }

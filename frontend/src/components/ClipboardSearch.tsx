@@ -16,7 +16,13 @@ interface ClipboardSearchProps {
   onItemDelete: (id: string) => void;
   onItemPin: (id: string, pinned: boolean) => void;
   onClose: () => void;
-  onSearch?: (query: string, useRegex?: boolean) => Promise<ClipboardItem[]>;
+  onSearch?: (
+    query: string,
+    useRegex?: boolean,
+    limit?: number,
+    offset?: number
+  ) => Promise<ClipboardItem[]>;
+  onLoadMore?: (limit: number, offset: number) => Promise<ClipboardItem[]>;
   isVisible: boolean;
   sortByRecent?: "copied" | "pasted";
 }
@@ -28,6 +34,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   onItemPin,
   onClose,
   onSearch,
+  onLoadMore,
   isVisible,
   sortByRecent = "copied",
 }) => {
@@ -35,6 +42,8 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<ClipboardItem[]>(items);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreItems, setHasMoreItems] = useState(true);
   const [useRegex, setUseRegex] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -57,34 +66,77 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
       if (searchQuery.trim() && onSearch) {
         setIsSearching(true);
         try {
-          const results = await onSearch(searchQuery, useRegex);
+          const results = await onSearch(searchQuery, useRegex, 15, 0);
           setSearchResults(results);
+          setHasMoreItems(results.length === 15); // If we got 15 items, there might be more
         } catch (error) {
           setSearchResults([]);
+          setHasMoreItems(false);
         } finally {
           setIsSearching(false);
         }
       } else if (!searchQuery.trim()) {
-        setSearchResults(items);
+        // For initial view, load first 15 items using onLoadMore if available
+        if (onLoadMore) {
+          setIsSearching(true);
+          try {
+            const results = await onLoadMore(15, 0);
+            setSearchResults(results);
+            setHasMoreItems(results.length === 15);
+          } catch (error) {
+            setSearchResults(items.slice(0, 15));
+            setHasMoreItems(items.length > 15);
+          } finally {
+            setIsSearching(false);
+          }
+        } else {
+          setSearchResults(items.slice(0, 15));
+          setHasMoreItems(items.length > 15);
+        }
       }
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, useRegex, onSearch, items]);
 
-  const sortedItems = [...searchResults].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
+  const loadMoreItems = async () => {
+    if (!hasMoreItems || isLoadingMore || !onLoadMore) return;
 
-    // Second priority: Sort by recent activity based on user preference
-    if (sortByRecent === "copied") {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else {
-      return (
-        new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime()
-      );
+    setIsLoadingMore(true);
+    try {
+      let moreItems: ClipboardItem[];
+      if (searchQuery.trim()) {
+        if (onSearch) {
+          moreItems = await onSearch(
+            searchQuery,
+            useRegex,
+            15,
+            searchResults.length
+          );
+        } else {
+          moreItems = [];
+        }
+      } else {
+        moreItems = await onLoadMore(15, searchResults.length);
+      }
+
+      if (moreItems.length > 0) {
+        setSearchResults((prev) => [...prev, ...moreItems]);
+        setHasMoreItems(moreItems.length === 15);
+      } else {
+        setHasMoreItems(false);
+      }
+    } catch (error) {
+      console.error("Failed to load more items:", error);
+      setHasMoreItems(false);
+    } finally {
+      setIsLoadingMore(false);
     }
-  });
+  };
+
+  const handleLoadMoreClick = () => {
+    loadMoreItems();
+  };
 
   useEffect(() => {
     if (isVisible && searchInputRef.current) {
@@ -107,7 +159,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
         case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            Math.min(prev + 1, sortedItems.length - 1)
+            Math.min(prev + 1, searchResults.length - 1)
           );
           break;
         case "ArrowUp":
@@ -116,27 +168,9 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
           break;
         case "Enter":
           e.preventDefault();
-          if (sortedItems[selectedIndex]) {
-            onItemSelect(sortedItems[selectedIndex]);
+          if (searchResults[selectedIndex]) {
+            onItemSelect(searchResults[selectedIndex]);
             onClose();
-          }
-          break;
-        case "1":
-        case "2":
-        case "3":
-        case "4":
-        case "5":
-        case "6":
-        case "7":
-        case "8":
-        case "9":
-          if (e.metaKey || e.ctrlKey) {
-            e.preventDefault();
-            const index = parseInt(e.key) - 1;
-            if (sortedItems[index]) {
-              onItemSelect(sortedItems[index]);
-              onClose();
-            }
           }
           break;
       }
@@ -144,7 +178,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isVisible, selectedIndex, sortedItems, onItemSelect, onClose]);
+  }, [isVisible, selectedIndex, searchResults, onItemSelect, onClose]);
 
   // Click outside to close - Fixed to properly handle context menu
   useEffect(() => {
@@ -247,11 +281,11 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-slide-in" />
+      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-200" />
 
       <div
         data-search-interface
-        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[600px] max-h-[450px] bg-white dark:bg-gray-800 backdrop-blur rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 animate-slide-in"
+        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[600px] max-h-[450px] bg-white dark:bg-gray-800 backdrop-blur rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200 ease-out scale-100 opacity-100"
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="relative">
@@ -286,9 +320,9 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
         {/* Results */}
         <div ref={itemsContainerRef} className="max-h-80 overflow-y-auto">
-          {sortedItems.length > 0 ? (
+          {searchResults.length > 0 ? (
             <div className="p-2">
-              {sortedItems.slice(0, 9).map((item, index) => (
+              {searchResults.map((item, index) => (
                 <div
                   key={item.id}
                   className={`group flex items-center px-3 py-3 cursor-pointer rounded-lg transition-all duration-150 ${
@@ -327,19 +361,29 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
                       {formatTime(item.createdAt)}
                     </div>
                   </div>
-
-                  {/* Keyboard Shortcut */}
-                  <div
-                    className={`text-xs ml-3 font-medium ${
-                      index === selectedIndex
-                        ? "text-white/70"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    ⌘{index + 1}
-                  </div>
                 </div>
               ))}
+
+              {/* Tiny Load More Button */}
+              {hasMoreItems && !isLoadingMore && (
+                <div className="flex justify-center py-2">
+                  <button
+                    onClick={handleLoadMoreClick}
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-md transition-colors duration-150 border border-gray-200 dark:border-gray-600"
+                  >
+                    Load More
+                  </button>
+                </div>
+              )}
+
+              {isLoadingMore && (
+                <div className="flex justify-center py-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-gray-400">...</span>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-8 text-center">
@@ -363,7 +407,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           {(() => {
-            const item = sortedItems.find((i) => i.id === contextMenu.itemId);
+            const item = searchResults.find((i) => i.id === contextMenu.itemId);
             return item ? (
               <>
                 <button
