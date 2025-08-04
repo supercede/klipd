@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import MenuBar from "./components/MenuBar";
 import ClipboardSearch from "./components/ClipboardSearch";
 import Settings from "./components/Settings";
+import Navbar from "./components/Navbar";
 import "./style.css";
 
 // Import Wails bindings
@@ -20,17 +20,18 @@ interface ClipboardItem {
 }
 
 function App() {
-  // State management
   const [clipboardItems, setClipboardItems] = useState<ClipboardItem[]>([]);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isMonitoringPaused, setIsMonitoringPaused] = useState(false);
   const [settings, setSettings] = useState<models.Settings | null>(null);
+  const [totalItemCount, setTotalItemCount] = useState(0);
 
   // Load initial data on component mount
   useEffect(() => {
     loadSettings();
     loadClipboardItems();
+    loadTotalItemCount();
     checkMonitoringStatus();
 
     // Listen for backend events
@@ -47,6 +48,7 @@ function App() {
       "clipboard-item-added",
       (_newItem: any) => {
         loadClipboardItems();
+        loadTotalItemCount(); // Update total count when new items are added
       }
     );
 
@@ -54,6 +56,7 @@ function App() {
       "clipboard-item-updated",
       (_updatedItem: any) => {
         loadClipboardItems();
+        loadTotalItemCount(); // Update total count when items are updated
       }
     );
 
@@ -108,6 +111,19 @@ function App() {
     }
   };
 
+  const loadTotalItemCount = async () => {
+    try {
+      const items = await WailsApp.GetClipboardItemsPaginated(
+        settings?.maxItems || 100,
+        0,
+        ""
+      );
+      setTotalItemCount(items.length);
+    } catch (error) {
+      console.error("Failed to load total item count:", error);
+    }
+  };
+
   const checkMonitoringStatus = async () => {
     try {
       const isEnabled = await WailsApp.IsMonitoringEnabled();
@@ -143,6 +159,12 @@ function App() {
         if (recentItem) {
           handleItemSelect(recentItem);
         }
+      }
+
+      // Menu bar hotkey (Cmd+Shift+M) - now opens search interface
+      if (e.metaKey && e.shiftKey && e.key === "M") {
+        e.preventDefault();
+        setIsSearchVisible(true);
       }
 
       // Settings hotkey (Cmd+,)
@@ -199,14 +221,6 @@ function App() {
     }
   };
 
-  const handleShowAll = () => {
-    setIsSearchVisible(true);
-  };
-
-  const handlePreferences = () => {
-    setIsSettingsVisible(true);
-  };
-
   const handlePauseMonitoring = async () => {
     try {
       const newStatus = await WailsApp.ToggleMonitoring();
@@ -216,17 +230,11 @@ function App() {
     }
   };
 
-  const handleQuit = () => {
-    // TODO: Implement quit via Wails binding
-    console.log("Quit requested");
-  };
-
   const handleSettingsChange = async (newSettings: models.Settings) => {
     try {
       await WailsApp.UpdateSettings(newSettings);
       setSettings(newSettings);
 
-      // Reload clipboard items if settings changed
       await loadClipboardItems();
     } catch (error) {
       console.error("Failed to update settings:", error);
@@ -316,20 +324,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary font-system">
-      {/* Menu Bar */}
-      <div className="fixed top-4 right-4 z-30">
-        <MenuBar
-          recentItems={clipboardItems.slice(0, 5)}
-          onShowAll={handleShowAll}
-          onPreferences={handlePreferences}
-          onPauseMonitoring={handlePauseMonitoring}
-          onQuit={handleQuit}
-          isMonitoringPaused={isMonitoringPaused}
-        />
-      </div>
+      {/* Top Navigation Bar */}
+      <Navbar
+        isMonitoringPaused={isMonitoringPaused}
+        totalItemCount={totalItemCount}
+        onPauseMonitoring={handlePauseMonitoring}
+        onShowSearch={() => setIsSearchVisible(true)}
+        onShowSettings={() => setIsSettingsVisible(true)}
+      />
 
-      {/* Main Content */}
-      <div className="flex items-center justify-center min-h-screen p-8">
+      <div className="flex items-center justify-center min-h-screen p-8 pt-20">
         <div className="text-center">
           <div className="text-8xl mb-6">📋</div>
           <h1 className="text-3xl font-bold text-macos-text-primary dark:text-macos-dark-text-primary mb-3">
@@ -378,19 +382,12 @@ function App() {
           {/* Status */}
           <div className="mt-6 flex items-center justify-center space-x-4 text-xs text-macos-text-tertiary dark:text-macos-dark-text-tertiary">
             <div className="flex items-center space-x-1">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isMonitoringPaused
-                    ? "bg-macos-accent-red"
-                    : "bg-macos-accent-green"
-                }`}
-              />
-              <span>
-                {isMonitoringPaused ? "Monitoring Paused" : "Monitoring Active"}
+              <span>Press</span>
+              <span className="inline-flex items-center px-2 py-1 bg-macos-bg-tertiary dark:bg-macos-dark-bg-tertiary rounded font-mono text-xs">
+                ⌘⇧M
               </span>
+              <span>to open search</span>
             </div>
-            <span>•</span>
-            <span>{clipboardItems.length} items in history</span>
           </div>
         </div>
       </div>

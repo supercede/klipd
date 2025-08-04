@@ -311,3 +311,28 @@ func (a *App) GetMonitoringStatus() map[string]interface{} {
 		"isRunning":       a.clipboardMonitor != nil && a.clipboardMonitor.IsRunning(),
 	}
 }
+
+// ShowMainWindow shows the main application window
+func (a *App) ShowMainWindow() {
+	runtime.WindowShow(a.ctx)
+}
+
+// ShowPreferences shows the preferences window
+func (a *App) ShowPreferences() {
+	runtime.WindowShow(a.ctx)
+	// The frontend will handle showing the preferences modal
+	runtime.EventsEmit(a.ctx, "show-preferences")
+}
+
+// Quit gracefully shuts down the application
+func (a *App) Quit() {
+	runtime.Quit(a.ctx)
+}
+
+// GetRecentItems returns the most recent clipboard items for the menu bar
+func (a *App) GetRecentItems(limit int) ([]models.ClipboardItem, error) {
+	if limit <= 0 {
+		limit = 5 // Default to 5 items
+	}
+	return a.db.GetClipboardItems(limit, 0, "", "recent") // Get recent items, all types
+}

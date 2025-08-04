@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Check } from "./check";
 
 interface ClipboardItem {
   id: string;
@@ -45,6 +46,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreItems, setHasMoreItems] = useState(true);
   const [useRegex, setUseRegex] = useState(false);
+  const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -169,8 +171,15 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
         case "Enter":
           e.preventDefault();
           if (searchResults[selectedIndex]) {
-            onItemSelect(searchResults[selectedIndex]);
-            onClose();
+            const selectedItem = searchResults[selectedIndex];
+            setCopiedItemId(selectedItem.id);
+
+            // Show copy animation for 850ms before closing (matches SVG animation timing)
+            setTimeout(() => {
+              onItemSelect(selectedItem);
+              onClose();
+              setCopiedItemId(null);
+            }, 850);
           }
           break;
       }
@@ -180,7 +189,6 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isVisible, selectedIndex, searchResults, onItemSelect, onClose]);
 
-  // Click outside to close - Fixed to properly handle context menu
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -253,8 +261,14 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
   const handleItemClick = (item: ClipboardItem, index: number) => {
     setSelectedIndex(index);
-    onItemSelect(item);
-    onClose();
+    setCopiedItemId(item.id);
+
+    // Show copy animation for 600ms before closing
+    setTimeout(() => {
+      onItemSelect(item);
+      onClose();
+      setCopiedItemId(null);
+    }, 800);
   };
 
   const handlePinClick = (
@@ -285,7 +299,7 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
 
       <div
         data-search-interface
-        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[600px] max-h-[450px] bg-white dark:bg-gray-800 backdrop-blur rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200 ease-out scale-100 opacity-100"
+        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[600px] max-h-[450px] bg-white dark:bg-gray-800 backdrop-blur rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-700 ease-out scale-100 opacity-100"
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="relative">
@@ -361,6 +375,13 @@ const ClipboardSearch: React.FC<ClipboardSearchProps> = ({
                       {formatTime(item.createdAt)}
                     </div>
                   </div>
+
+                  {/* Copy Success Checkmark */}
+                  {copiedItemId === item.id && (
+                    <div className="ml-3 flex-shrink-0">
+                      <Check />
+                    </div>
+                  )}
                 </div>
               ))}
 

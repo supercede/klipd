@@ -30,6 +30,10 @@ export function GetMonitoringStatus() {
   return window['go']['main']['App']['GetMonitoringStatus']();
 }
 
+export function GetRecentItems(arg1) {
+  return window['go']['main']['App']['GetRecentItems'](arg1);
+}
+
 export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
 }
@@ -46,6 +50,10 @@ export function PinClipboardItem(arg1, arg2) {
   return window['go']['main']['App']['PinClipboardItem'](arg1, arg2);
 }
 
+export function Quit() {
+  return window['go']['main']['App']['Quit']();
+}
+
 export function SearchClipboardItems(arg1, arg2) {
   return window['go']['main']['App']['SearchClipboardItems'](arg1, arg2);
 }
@@ -60,6 +68,14 @@ export function SearchClipboardItemsRegex(arg1, arg2) {
 
 export function SelectClipboardItem(arg1) {
   return window['go']['main']['App']['SelectClipboardItem'](arg1);
+}
+
+export function ShowMainWindow() {
+  return window['go']['main']['App']['ShowMainWindow']();
+}
+
+export function ShowPreferences() {
+  return window['go']['main']['App']['ShowPreferences']();
 }
 
 export function ShowSearchInterface() {
