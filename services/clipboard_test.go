@@ -384,7 +384,7 @@ func TestRunCleanup(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify cleanup happened (old item should be removed)
-	items, err := db.GetClipboardItems(10, 0, "")
+	items, err := db.GetClipboardItems(10, 0, "", "copied")
 	assert.NoError(t, err)
 
 	// Should have only the recent item
