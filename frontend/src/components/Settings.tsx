@@ -116,17 +116,18 @@ const Settings: React.FC<SettingsProps> = ({
                           return updated;
                         })
                       }
-                      className="w-24 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
+                      className="w-48 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
                       placeholder="⌘⇧V"
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-macos-text-primary dark:text-macos-dark-text-primary">
-                      Paste previous item
+                      Copy Previous item to clipboard
                     </label>
                     <input
                       type="text"
                       value={localSettings.previousItemHotkey}
+                      disabled={true}
                       onChange={(e) =>
                         setLocalSettings((prev) => {
                           const updated = new models.Settings({
@@ -136,7 +137,8 @@ const Settings: React.FC<SettingsProps> = ({
                           return updated;
                         })
                       }
-                      className="w-24 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center"
+                      // disabled so greyed out
+                      className={`w-48 px-3 py-1 text-sm bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary border border-macos-border dark:border-macos-dark-border rounded-macos-input text-center opacity-60 cursor-not-allowed`}
                       placeholder="⌘⇧C"
                     />
                   </div>
@@ -299,7 +301,7 @@ const Settings: React.FC<SettingsProps> = ({
                       </p>
                     </div>
                   </label>
-                  <label className="flex items-center">
+                  {/* <label className="flex items-center">
                     <input
                       type="checkbox"
                       checked={localSettings.enableSounds}
@@ -322,7 +324,7 @@ const Settings: React.FC<SettingsProps> = ({
                         Play sound when copying large items
                       </p>
                     </div>
-                  </label>
+                  </label> */}
                 </div>
               </div>
             </div>

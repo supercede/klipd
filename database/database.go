@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -24,6 +25,8 @@ func New() (*Database, error) {
 
 	// Create app data directory
 	appDir := filepath.Join(homeDir, "Library", "Application Support", "Klipd")
+
+	fmt.Println("Creating app data directory:", appDir)
 	if err := os.MkdirAll(appDir, 0755); err != nil {
 		return nil, err
 	}
@@ -87,7 +90,7 @@ func (d *Database) initializeSettings() error {
 
 	if count == 0 {
 		defaultSettings := &models.Settings{
-			GlobalHotkey:       "Cmd+Shift+V",
+			GlobalHotkey:       "Cmd+Shift+Space",
 			PreviousItemHotkey: "Cmd+Shift+C",
 			PollingInterval:    500,
 			MaxItems:           100,

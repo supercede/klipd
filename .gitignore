@@ -5,3 +5,4 @@ frontend/dist
 stuff.md
 .env
 coverage.*
+*.db

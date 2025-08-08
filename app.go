@@ -65,17 +65,10 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize hotkey manager
 	a.hotkeyManager = services.NewHotkeyManager()
 
-	// Register global hotkeys
+	// Register and start global hotkeys
 	if err := a.setupHotkeys(); err != nil {
 		log.Printf("Failed to setup hotkeys: %v", err)
 	}
-
-	// Start clipboard monitoring
-	if err := a.clipboardMonitor.Start(); err != nil {
-		log.Printf("Failed to start clipboard monitor: %v", err)
-	}
-
-	// Start hotkey manager
 	if err := a.hotkeyManager.Start(); err != nil {
 		log.Printf("Failed to start hotkey manager: %v", err)
 	}
@@ -102,15 +95,19 @@ func (a *App) shutdown(ctx context.Context) {
 
 // setupHotkeys configures global hotkeys
 func (a *App) setupHotkeys() error {
-	// Register global hotkey for search interface
-	globalHotkey := a.config.GlobalHotkey
-	if globalHotkey == "" {
-		globalHotkey = "Cmd+Shift+Space" // Default hotkey
+	// Register global hotkey for showing clipboard history (focus app + show search)
+	settings, err := a.db.GetSettings()
+	if err != nil {
+		return err
 	}
-
-	err := a.hotkeyManager.Register(globalHotkey, func() {
-		log.Printf("Global hotkey triggered: %s", globalHotkey)
-		// Emit event to frontend to show search interface
+	hotkeyStr := settings.GlobalHotkey
+	if hotkeyStr == "" {
+		hotkeyStr = "Cmd+Shift+Space"
+	}
+	err = a.hotkeyManager.Register(hotkeyStr, func() {
+		log.Printf("Global hotkey triggered: %s", hotkeyStr)
+		// Bring window to front and show search interface
+		runtime.WindowShow(a.ctx)
 		runtime.EventsEmit(a.ctx, "show-search-interface")
 	})
 	if err != nil {
@@ -127,6 +124,16 @@ func (a *App) setupHotkeys() error {
 		log.Printf("Previous item hotkey triggered: %s", previousHotkey)
 		// Get the most recent clipboard item and paste it
 		a.pasteLastItem()
+	})
+	if err != nil {
+		return err
+	}
+
+	// Register show window hotkey
+	showWindowHotkey := "Cmd+Shift+K" // Show main window hotkey
+	err = a.hotkeyManager.Register(showWindowHotkey, func() {
+		log.Printf("Show window hotkey triggered: %s", showWindowHotkey)
+		a.ShowMainWindow()
 	})
 	if err != nil {
 		return err
@@ -164,10 +171,9 @@ func (a *App) HideSearchInterface() {
 }
 
 // TriggerGlobalHotkey manually triggers the global hotkey (for testing)
+// This function is now a placeholder as the new library doesn't support manual triggering.
 func (a *App) TriggerGlobalHotkey() {
-	if a.hotkeyManager != nil {
-		a.hotkeyManager.TriggerHotkey(a.config.GlobalHotkey)
-	}
+	log.Println("Manual hotkey triggering is not supported by the new library.")
 }
 
 // GetClipboardItems returns clipboard items with optional pagination and filtering
@@ -257,6 +263,15 @@ func (a *App) GetSettings() (*models.Settings, error) {
 func (a *App) UpdateSettings(settings *models.Settings) error {
 	if err := a.db.UpdateSettings(settings); err != nil {
 		return err
+	}
+	// Re-register hotkeys on settings update
+	a.hotkeyManager.Stop()
+	a.hotkeyManager = services.NewHotkeyManager()
+	if err := a.setupHotkeys(); err != nil {
+		log.Printf("Failed to re-setup hotkeys after settings update: %v", err)
+	}
+	if err := a.hotkeyManager.Start(); err != nil {
+		log.Printf("Failed to re-start hotkey manager: %v", err)
 	}
 
 	// Update runtime configuration
