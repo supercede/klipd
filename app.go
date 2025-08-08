@@ -58,6 +58,10 @@ func (a *App) startup(ctx context.Context) {
 
 	// Initialize clipboard monitor
 	a.clipboardMonitor = services.NewClipboardMonitor(a.db, a.config)
+	// Start clipboard monitoring
+	if err := a.clipboardMonitor.Start(); err != nil {
+		log.Printf("Failed to start clipboard monitor: %v", err)
+	}
 
 	// Set Wails context for event emission
 	a.clipboardMonitor.SetWailsContext(a.ctx)
@@ -284,6 +288,7 @@ func (a *App) UpdateSettings(settings *models.Settings) error {
 		"previousItemHotkey": settings.PreviousItemHotkey,
 		"autoLaunch":         settings.AutoLaunch,
 		"enableSounds":       settings.EnableSounds,
+		"allowPasswords":     settings.AllowPasswords,
 	}
 	a.config.UpdateFromSettings(settingsMap)
 
