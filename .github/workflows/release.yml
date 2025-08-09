@@ -40,20 +40,20 @@ jobs:
             brew install golangci-lint
           fi
 
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
       - name: Install dependencies
         run: make install-deps
 
-      - name: Run make test
-        run: make test
+      - name: Build Wails app
+        run: make build
 
       - name: Run make check
         run: make check
 
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Build Wails app
-        run: make build
+      - name: Run make test
+        run: make test
 
       - name: Add executable permissions
         run: chmod +x build/bin/${{ env.APP_NAME }}.app/Contents/MacOS/*
