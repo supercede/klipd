@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ClipboardSearch from "./components/ClipboardSearch";
 import Settings from "./components/Settings";
 import Navbar from "./components/Navbar";
+import appIcon from "./assets/images/appicon.png";
 import "./style.css";
 
 // Import Wails bindings
@@ -313,7 +314,7 @@ function App() {
     return (
       <div className="min-h-screen bg-macos-bg-secondary dark:bg-macos-dark-bg-secondary font-system flex items-center justify-center">
         <div className="text-center">
-          <div className="text-8xl mb-6">📋</div>
+          <img src={appIcon} alt="Klipd" className="w-20 h-20 mx-auto mb-6" />
           <p className="text-lg text-macos-text-secondary dark:text-macos-dark-text-secondary">
             Loading Klipd...
           </p>
@@ -335,7 +336,7 @@ function App() {
 
       <div className="flex items-center justify-center min-h-screen p-8 pt-20">
         <div className="text-center">
-          <div className="text-8xl mb-6">📋</div>
+          <img src={appIcon} alt="Klipd" className="w-24 h-24 mx-auto mb-6" />
           <h1 className="text-3xl font-bold text-macos-text-primary dark:text-macos-dark-text-primary mb-3">
             Klipd
           </h1>
@@ -377,17 +378,6 @@ function App() {
             >
               Preferences
             </button>
-          </div>
-
-          {/* Status */}
-          <div className="mt-6 flex items-center justify-center space-x-4 text-xs text-macos-text-tertiary dark:text-macos-dark-text-tertiary">
-            <div className="flex items-center space-x-1">
-              <span>Press</span>
-              <span className="inline-flex items-center px-2 py-1 bg-macos-bg-tertiary dark:bg-macos-dark-bg-tertiary rounded font-mono text-xs">
-                ⌘⇧M
-              </span>
-              <span>to open search</span>
-            </div>
           </div>
         </div>
       </div>

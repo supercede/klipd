@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { models } from "../../wailsjs/go/models";
+import appIcon from "../assets/images/appicon.png";
 
 interface SettingsProps {
   settings: models.Settings;
@@ -408,7 +409,11 @@ const Settings: React.FC<SettingsProps> = ({
           {activeTab === "about" && (
             <div className="space-y-6">
               <div className="text-center py-8">
-                <div className="text-6xl mb-4">📋</div>
+                <img
+                  src={appIcon}
+                  alt="Klipd"
+                  className="w-16 h-16 mx-auto mb-4"
+                />
                 <h2 className="text-2xl font-bold text-macos-text-primary dark:text-macos-dark-text-primary mb-2">
                   Klipd
                 </h2>

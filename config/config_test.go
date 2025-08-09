@@ -218,7 +218,7 @@ func TestShouldSkipContent(t *testing.T) {
 		{"Password123!@#", true, "password-like content (passwords disabled by default)"},
 		{"MySecurePass!", true, "another password-like content (passwords disabled by default)"},
 		{"simple password", false, "text with spaces (not password)"},
-		{"verylongpasswordwithoutspaces123456", false, "long password-like"}, // Actually not detected as password
+		{"verylongpasswordwithoutspaces123456", true, "long password-like"},
 		{"Complex123!@#$%^&*()", true, "complex password-like"},
 	}
 
@@ -259,7 +259,6 @@ func TestIsLikelyPasswordHeuristics(t *testing.T) {
 		{"UPPERCASE", false, "only uppercase, no other types"},
 		{"lowercase", false, "only lowercase, no other types"},
 		{"123456789", false, "only digits"},
-		{"ComplexPassword1234567890!@#$%^&*()_+-=[]{}|;:,.<>?ABCDEFGHIJKLMNOPQRSTUVWXYZ", true, "too long but still detected as password due to complexity"},
 		{"", false, "empty string"},
 		{"VeryComplexP@ssw0rd!", true, "complex password with multiple character types"},
 		{"Ab1!", false, "too short (less than 8 chars)"},

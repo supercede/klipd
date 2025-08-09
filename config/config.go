@@ -193,7 +193,6 @@ func (c *Config) ShouldSkipContent(content string) bool {
 
 	// Skip content that looks like passwords (simple heuristic) unless allowed
 	if !c.AllowPasswords && isLikelyPassword(content) {
-		fmt.Println("Skipping content that looks like a password:", content)
 		return true
 	}
 
@@ -321,7 +320,7 @@ func isProgrammingPattern(content string) bool {
 		// Common object properties
 		".length", ".prototype", ".constructor",
 		// CSS/HTML-like
-		"px", "em", "rem", "%", "rgb(", "rgba(", "#",
+		"px", "em", "rem", "rgb(", "rgba(",
 		// others
 		"window", "document",
 	}
@@ -391,6 +390,11 @@ func isRepeatedChar(s string) bool {
 func looksLikeCamelCase(s string) bool {
 	// Must start with letter
 	if !unicode.IsLetter(rune(s[0])) {
+		return false
+	}
+
+	// Skip if it has slashes, dots, or other non-identifier chars
+	if strings.ContainsAny(s, "/.@-+") {
 		return false
 	}
 

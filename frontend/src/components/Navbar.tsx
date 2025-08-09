@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import * as WailsApp from "../../wailsjs/go/main/App";
-import { models } from "../../wailsjs/go/models";
 
 interface NavbarProps {
   isMonitoringPaused: boolean;
@@ -97,7 +96,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center justify-between h-full px-4">
         {/* Left Side - App Info */}
         <div className="flex items-center space-x-3">
-          <div className="text-lg">📋</div>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
             Klipd
           </span>

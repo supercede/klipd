@@ -26,6 +26,7 @@ func NewHotkeyManager() *HotkeyManager {
 	return &HotkeyManager{
 		callbacks:  make(map[string]HotkeyCallback),
 		registered: make(map[string]*hotkey.Hotkey),
+		isRunning:  false,
 	}
 }
 
