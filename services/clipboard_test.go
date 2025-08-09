@@ -19,11 +19,15 @@ func setupTestClipboardMonitor(t *testing.T) (*ClipboardMonitor, *database.Datab
 
 	// Set environment variable to use test database path
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
+	if err := os.Setenv("HOME", tempDir); err != nil {
+		t.Fatalf("Failed to set HOME: %v", err)
+	}
 
 	// Cleanup function
 	t.Cleanup(func() {
-		os.Setenv("HOME", originalHome)
+		if err := os.Setenv("HOME", originalHome); err != nil {
+			t.Logf("Failed to restore HOME: %v", err)
+		}
 	})
 
 	db, err := database.New()
@@ -40,7 +44,9 @@ func setupTestClipboardMonitor(t *testing.T) (*ClipboardMonitor, *database.Datab
 
 	t.Cleanup(func() {
 		monitor.Stop()
-		db.Close()
+		if err := db.Close(); err != nil {
+			t.Logf("Failed to close database: %v", err)
+		}
 	})
 
 	return monitor, db
@@ -58,7 +64,9 @@ func TestNewClipboardMonitor(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestClipboardMonitorStart(t *testing.T) {
@@ -76,7 +84,9 @@ func TestClipboardMonitorStart(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestClipboardMonitorStop(t *testing.T) {
@@ -99,7 +109,9 @@ func TestClipboardMonitorStop(t *testing.T) {
 	assert.False(t, monitor.IsRunning())
 
 	// Cleanup
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestClipboardMonitorIsRunning(t *testing.T) {
@@ -119,7 +131,9 @@ func TestClipboardMonitorIsRunning(t *testing.T) {
 	assert.False(t, monitor.IsRunning())
 
 	// Cleanup
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestUpdateConfig(t *testing.T) {
@@ -144,7 +158,9 @@ func TestUpdateConfig(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestGenerateHash(t *testing.T) {
@@ -171,7 +187,9 @@ func TestGenerateHash(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestDetectContentType(t *testing.T) {
@@ -200,7 +218,9 @@ func TestDetectContentType(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestConfigUtilities(t *testing.T) {
@@ -265,7 +285,9 @@ func TestGetRecentItems(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestSearchItems(t *testing.T) {
@@ -302,7 +324,9 @@ func TestSearchItems(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestPinItem(t *testing.T) {
@@ -341,7 +365,9 @@ func TestPinItem(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestRunCleanup(t *testing.T) {
@@ -404,7 +430,9 @@ func TestRunCleanup(t *testing.T) {
 
 	// Cleanup
 	monitor.Stop()
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }
 
 func TestMonitorWithContext(t *testing.T) {
@@ -437,5 +465,7 @@ func TestMonitorWithContext(t *testing.T) {
 		t.Fatal("Context should be done after stopping monitor")
 	}
 
-	db.Close()
+	if err := db.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
 }

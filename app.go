@@ -93,7 +93,9 @@ func (a *App) shutdown(ctx context.Context) {
 	}
 
 	if a.db != nil {
-		a.db.Close()
+		if err := a.db.Close(); err != nil {
+			log.Printf("Failed to close database: %v", err)
+		}
 	}
 }
 
@@ -312,7 +314,9 @@ func (a *App) ToggleMonitoring() bool {
 	// Update the setting in database
 	if settings, err := a.db.GetSettings(); err == nil {
 		settings.MonitoringEnabled = a.config.MonitoringEnabled
-		a.db.UpdateSettings(settings)
+		if err := a.db.UpdateSettings(settings); err != nil {
+			log.Printf("Failed to update settings: %v", err)
+		}
 	}
 
 	return a.config.MonitoringEnabled

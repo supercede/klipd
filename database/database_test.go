@@ -16,10 +16,14 @@ func setupTestDB(t *testing.T) *Database {
 
 	originalHome := os.Getenv("HOME")
 	testHome := tempDir
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Fatalf("Failed to set HOME: %v", err)
+	}
 
 	t.Cleanup(func() {
-		os.Setenv("HOME", originalHome)
+		if err := os.Setenv("HOME", originalHome); err != nil {
+			t.Logf("Failed to restore HOME: %v", err)
+		}
 	})
 
 	db, err := New()

@@ -110,7 +110,9 @@ func (hm *HotkeyManager) Unregister(hotkeyStr string) {
 	defer hm.mu.Unlock()
 
 	if hk, exists := hm.registered[hotkeyStr]; exists {
-		hk.Unregister()
+		if err := hk.Unregister(); err != nil {
+			log.Printf("Failed to unregister hotkey %s: %v", hotkeyStr, err)
+		}
 		delete(hm.registered, hotkeyStr)
 		delete(hm.callbacks, hotkeyStr)
 		log.Printf("Unregistered hotkey: %s", hotkeyStr)
@@ -136,7 +138,9 @@ func (hm *HotkeyManager) Stop() {
 	}
 
 	for str, hk := range hm.registered {
-		hk.Unregister()
+		if err := hk.Unregister(); err != nil {
+			log.Printf("Failed to unregister hotkey %s: %v", str, err)
+		}
 		log.Printf("Unregistered hotkey on stop: %s", str)
 	}
 
