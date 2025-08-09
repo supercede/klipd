@@ -1,5 +1,8 @@
 name: Release Klipd
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
