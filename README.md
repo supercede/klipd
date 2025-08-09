@@ -31,12 +31,25 @@ A fast, native macOS clipboard manager built with Wails (Go + React) that provid
 - macOS 10.13+ (High Sierra or later)
 - No additional dependencies required
 
-### Quick Start
+### Download & Install
 
-1. Download the latest release from [releases page]
-2. Drag `Klipd.app` to your Applications folder
-3. Launch Klipd from Applications or Spotlight
-4. Grant clipboard access permissions when prompted
+1. **Download** the latest `klipd.app.zip` from the [Releases](https://github.com/your-username/klipd/releases) page
+2. **Extract** the ZIP file (double-click)
+3. **Move** `klipd.app` to your Applications folder
+4. **First Launch**: Right-click on Klipd → "Open" to bypass macOS Gatekeeper security
+5. **Grant Permissions**: Allow accessibility permissions when prompted (required for clipboard access)
+
+> **Security Note**: Since this app is not signed with an Apple Developer certificate, macOS will warn you on first launch. This is normal for open-source apps distributed outside the App Store.
+
+### Verify Download (Optional)
+
+For security, you can verify your download using the provided checksums:
+
+```bash
+# Download both klipd.app.zip and checksums.txt from releases
+shasum -a 256 klipd.app.zip
+# Compare with the hash in checksums.txt
+```
 
 ### Building from Source
 

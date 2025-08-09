@@ -1,0 +1,120 @@
+name: Release Klipd
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # Manual stable releases with tags only
+  workflow_dispatch: # Triggered by: Manual run from GitHub Actions tab
+
+env:
+  APP_NAME: klipd
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+          cache-dependency-path: "go.sum"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "frontend/package.json"
+
+      - name: Install development tools
+        run: |
+          # Install golangci-lint if not available
+          if ! command -v golangci-lint &> /dev/null; then
+            brew install golangci-lint
+          fi
+
+      - name: Install dependencies
+        run: make install-deps
+
+      - name: Run make test
+        run: make test
+
+      - name: Run make check
+        run: make check
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build Wails app
+        run: make build
+
+      - name: Add executable permissions
+        run: chmod +x build/bin/${{ env.APP_NAME }}.app/Contents/MacOS/*
+
+      - name: Create .app.zip
+        run: |
+          cd build/bin
+          ditto -c -k --keepParent ${{ env.APP_NAME }}.app ${{ env.APP_NAME }}.app.zip
+
+      - name: Generate checksums
+        run: |
+          cd build/bin
+          shasum -a 256 ${{ env.APP_NAME }}.app.zip > checksums.txt
+          echo "Generated checksums:"
+          cat checksums.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: klipd-macos-universal-${{ github.run_number }}
+          path: |
+            build/bin/${{ env.APP_NAME }}.app.zip
+            build/bin/checksums.txt
+
+      #   - name: Upload checksums
+      #     uses: actions/upload-artifact@v4
+      #     with:
+      #       name: checksums-${{ github.run_number }}
+      #       path: build/bin/checksums.txt
+
+      # Create release for tag pushes (manual stable releases)
+      - name: Create Stable Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Klipd ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## 📦 Installation Instructions
+
+            **For macOS users:**
+            1. Download `klipd.app.zip` from the assets below
+            2. Extract the ZIP file
+            3. Move `klipd.app` to your Applications folder
+            4. **First launch:** Right-click on Klipd → "Open" to bypass Gatekeeper security
+            5. Grant accessibility permissions when prompted (required for clipboard access)
+
+            ## 🔐 Security
+
+            To verify the download:
+            ```bash
+            shasum -a 256 klipd.app.zip
+            ```
+
+            ## 📝 Release Notes
+
+            <!-- Auto-generated release notes will appear here -->
+          files: |
+            build/bin/${{ env.APP_NAME }}.app.zip
+            build/bin/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
